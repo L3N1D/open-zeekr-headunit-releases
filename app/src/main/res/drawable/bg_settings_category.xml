@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A settings section card: the row colour at rest, darker when pressed. Chosen, it is clear:
+     the sliding highlight behind it (bg_settings_category_indicator) shows through. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:enterFadeDuration="150"
+    android:exitFadeDuration="150">
+    <item android:state_selected="true" android:drawable="@android:color/transparent" />
+    <item android:state_pressed="true">
+        <shape>
+            <solid android:color="@color/settings_category_pressed" />
+            <corners android:radius="18dp" />
+        </shape>
+    </item>
+    <item>
+        <shape>
+            <solid android:color="@color/setting_background_color" />
+            <corners android:radius="18dp" />
+        </shape>
+    </item>
+</selector>

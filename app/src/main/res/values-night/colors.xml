@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="setting_background_color">#1A221D</color>
+    <color name="primary_dark">#000000</color>
+    <color name="divider_color">#1FFFFFFF</color>
+    <color name="adaptive_text_color">#FFFFFF</color>
+    <color name="text_primary">#f7f7f7</color>
+    <color name="segmented_button_stroke">#CCCCCC</color>
+    <color name="splash_background">#121417</color>
+    <color name="splash_text_revived">#2ECC55</color>
+    <color name="onb_audio_card">#1B2B28</color>
+    <color name="onb_audio_option">#16221F</color>
+    <color name="onb_audio_option_selected">#22332F</color>
+    <color name="onb_audio_chip_bg">#1D3A2F</color>
+    <color name="onb_audio_chip_text">#A5D6A7</color>
+
+    <!-- Home screen at night: neutral surfaces, the connection color only as an accent. -->
+    <color name="home_panel">#111713</color>
+    <color name="home_panel_stroke">#1C251F</color>
+    <color name="home_tile">#1A221D</color>
+    <color name="home_tile_pressed">#24302A</color>
+    <color name="home_tile_stroke">#223027</color>
+    <color name="home_slot_stroke">#2F3540</color>
+    <color name="home_text">#E6E8EB</color>
+    <color name="home_text_muted">#9AA1AB</color>
+    <color name="home_apps_tile">#1C212A</color>
+    <color name="home_apps_tile_pressed">#262C37</color>
+    <color name="home_apps_icon">#5FD08A</color>
+    <color name="home_usb">#E0894B</color>
+    <color name="home_wifi">#5FD08A</color>
+    <color name="home_self">#6FD39A</color>
+    <color name="home_monochrome">#9AA1AB</color>
+    <color name="home_countdown_ring">#66E6E8EB</color>
+    <!-- Settings section cards (left column). -->
+    <color name="settings_category_selected">#1B3A25</color>
+    <color name="settings_category_pressed">#24302A</color>
+    <color name="segment_selected_bg">#1D4A2A</color>
+    <color name="segment_selected_text">#C8F5D2</color>
+    <color name="update_card_bg">#1A221D</color>
+    <color name="update_icon_glyph">#062B10</color>
+    <color name="update_size_bg">#2A2F1A</color>
+    <color name="update_size_text">#E2E59A</color>
+    <color name="update_progress_track">#2B3A2F</color>
+    <color name="brand_on_primary">#0A3A17</color>
+    <color name="brand_outline">#8B938C</color>
+    <color name="brand_surface_variant">#3A443D</color>
+</resources>

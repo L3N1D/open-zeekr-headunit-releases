@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Long-press the Carlink icon -> Settings, also while Android Auto is on screen. -->
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_settings"
+        android:shortcutId="settings"
+        android:shortcutShortLabel="@string/settings">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.lenid.carlink.SettingsActivity"
+            android:targetPackage="com.lenid.carlink" />
+    </shortcut>
+</shortcuts>

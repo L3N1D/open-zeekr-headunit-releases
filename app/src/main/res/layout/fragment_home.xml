@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The clock and the date across the top, then the main button with the quick actions beside it:
+    a grid of big tiles (connections, the HUD map, settings, updates), two to a row. Written for a
+    left-hand drive car; HomeUiHelper.applyDriverSide reverses the horizontal rows for a right-hand
+    drive one, because setLayoutDirection does not exist on Android 4.1.
+    Gaps are LinearLayout dividers rather than margins, so they survive that reversal.
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="@dimen/home_gap">
+
+    <LinearLayout
+        android:id="@+id/home_top_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:baselineAligned="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingTop="4dp"
+        android:paddingEnd="4dp"
+        android:paddingBottom="8dp">
+
+        <TextClock
+            android:id="@+id/home_top_clock"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:format12Hour="h:mm"
+            android:format24Hour="HH:mm"
+            android:textColor="@color/home_text"
+            android:textSize="@dimen/home_top_clock"
+            android:textStyle="bold" />
+
+        <TextClock
+            android:id="@+id/home_top_date"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:format12Hour="EEEE, d MMMM"
+            android:format24Hour="EEEE, d MMMM"
+            android:maxLines="1"
+            android:textColor="@color/home_text_muted"
+            android:textSize="@dimen/home_top_date" />
+
+        <!-- Exit, when the app is the car's launcher. HomeUiHelper.applyTheme paints it. -->
+        <LinearLayout
+            android:id="@+id/exit_button"
+            style="@style/HomeTile.Pill">
+            <ImageView
+                style="@style/HomeTileIcon"
+                app:srcCompat="@drawable/ic_power_white" />
+            <com.lenid.zoh.view.WordFitTextView
+                style="@style/HomeTileLabel.Pill"
+                android:text="@string/exit" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/main_buttons_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:baselineAligned="false"
+        android:divider="@drawable/home_gap"
+        android:showDividers="middle">
+
+        <!-- The pages: the main one from this file, the rest added by HomeFragment.renderPages. The
+             dots under them only show with more than one page. -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1.3"
+            android:orientation="vertical">
+
+            <com.lenid.zoh.main.HomePager
+                android:id="@+id/home_pager"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1">
+
+                <LinearLayout
+                    android:id="@+id/home_page_main"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:divider="@drawable/home_gap"
+                    android:showDividers="middle">
+
+                    <include layout="@layout/view_home_primary_card" />
+
+                    <include layout="@layout/view_home_favorites" />
+
+                </LinearLayout>
+
+            </com.lenid.zoh.main.HomePager>
+
+            <include layout="@layout/view_home_page_dots" />
+
+        </LinearLayout>
+
+
+        <!-- The quick actions. Tiles the driver does not use are hidden, and the grid closes up. -->
+        <LinearLayout
+            android:id="@+id/home_driver_bar"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:padding="@dimen/home_grid_padding">
+
+            <com.lenid.zoh.view.HomeTileGrid
+                android:id="@+id/home_bar_tiles"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <LinearLayout
+                    android:id="@+id/usb_button"
+                    style="@style/HomeTile.Grid">
+                    <ImageView
+                        style="@style/HomeTileIcon.Grid"
+                        app:srcCompat="@drawable/ic_usb_white" />
+                    <com.lenid.zoh.view.WordFitTextView
+                        style="@style/HomeTileLabel.Grid"
+                        android:text="@string/usb" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/wifi_button"
+                    style="@style/HomeTile.Grid">
+                    <ImageView
+                        style="@style/HomeTileIcon.Grid"
+                        app:srcCompat="@drawable/ic_network_wifi_white" />
+                    <com.lenid.zoh.view.WordFitTextView
+                        style="@style/HomeTileLabel.Grid"
+                        android:text="@string/wifi" />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:id="@+id/dongle_button"
+                    style="@style/HomeTile.Grid">
+                    <ImageView
+                        style="@style/HomeTileIcon.Grid"
+                        app:srcCompat="@drawable/ic_dongle_white" />
+                    <com.lenid.zoh.view.WordFitTextView
+                        style="@style/HomeTileLabel.Grid"
+                        android:text="@string/home_dongle" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/hud_map_button"
+                    style="@style/HomeTile.Grid">
+                    <ImageView
+                        style="@style/HomeTileIcon.Grid"
+                        app:srcCompat="@drawable/ic_hud_map_white" />
+                    <com.lenid.zoh.view.WordFitTextView
+                        style="@style/HomeTileLabel.Grid"
+                        android:text="@string/home_hud_map" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/card_button"
+                    style="@style/HomeTile.Grid">
+                    <ImageView
+                        style="@style/HomeTileIcon.Grid"
+                        app:srcCompat="@drawable/ic_card_white" />
+                    <com.lenid.zoh.view.WordFitTextView
+                        style="@style/HomeTileLabel.Grid"
+                        android:text="@string/home_card" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/settings_button"
+                    style="@style/HomeTile.Grid">
+                    <ImageView
+                        style="@style/HomeTileIcon.Grid"
+                        app:srcCompat="@drawable/ic_settings_white" />
+                    <com.lenid.zoh.view.WordFitTextView
+                        style="@style/HomeTileLabel.Grid"
+                        android:text="@string/settings" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/updates_button"
+                    style="@style/HomeTile.Grid">
+                    <ImageView
+                        style="@style/HomeTileIcon.Grid"
+                        app:srcCompat="@drawable/ic_refresh_white" />
+                    <com.lenid.zoh.view.WordFitTextView
+                        style="@style/HomeTileLabel.Grid"
+                        android:text="@string/home_updates" />
+                </LinearLayout>
+
+            </com.lenid.zoh.view.HomeTileGrid>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

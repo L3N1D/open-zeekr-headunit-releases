@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material 3 scheme generated around a teal seed (#00696E) -->
+    <color name="md_primary">#00696E</color>
+    <color name="md_on_primary">#FFFFFF</color>
+    <color name="md_primary_container">#9CF0F6</color>
+    <color name="md_on_primary_container">#002022</color>
+    <color name="md_secondary">#4A6365</color>
+    <color name="md_secondary_container">#CCE8E9</color>
+    <color name="md_on_secondary_container">#051F21</color>
+    <color name="md_surface">#F4FBFB</color>
+    <color name="md_on_surface">#161D1D</color>
+    <color name="md_on_surface_variant">#3F4949</color>
+    <color name="md_surface_container">#E9EFEF</color>
+    <color name="md_outline">#6F7979</color>
+</resources>

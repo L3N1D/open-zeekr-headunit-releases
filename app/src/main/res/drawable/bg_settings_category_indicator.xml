@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The sliding highlight behind the chosen settings section. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@color/settings_category_selected" />
+    <corners android:radius="18dp" />
+</shape>

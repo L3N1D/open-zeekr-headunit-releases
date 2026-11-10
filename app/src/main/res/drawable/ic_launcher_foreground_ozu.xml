@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Open Zeekr Headunit: a steering wheel with the head unit's screen above it, scaled into the
+     adaptive icon's 66 dp safe zone so a round mask does not cut the screen. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.82"
+        android:scaleY="0.82">
+        <!-- The wheel's rim. -->
+        <path
+            android:pathData="M54,32 A26,26 0 1,1 53.99,32 Z"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="6" />
+        <!-- Its spokes. -->
+        <path
+            android:pathData="M32,62 Q54,54 76,62"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="6" />
+        <path
+            android:pathData="M54,62 L54,84"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="6" />
+        <!-- The screen above it, green as the route map's accent. -->
+        <path
+            android:fillColor="#2ECC55"
+            android:pathData="M43,20 L65,20 Q68,20 68,23 L68,33 Q68,36 65,36 L43,36 Q40,36 40,33 L40,23 Q40,20 43,20 Z" />
+    </group>
+</vector>

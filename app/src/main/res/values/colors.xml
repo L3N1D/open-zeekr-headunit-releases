@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="material_grey_500">#9E9E9E</color>
+    <color name="material_grey_700">#616161</color>
+    <color name="material_grey_900">#212121</color>
+
+    <color name="primary_dark">@color/material_grey_900</color>
+    <color name="primary_light">#fffbff</color>
+    <color name="material_orange_700">#f57c00</color>
+    <color name="material_green_700">#388e3c</color>
+    <color name="material_red_700">#D32F2F</color>
+
+    <color name="text_primary">#f7f7f7</color>
+    <color name="text_second">#bdbebd</color>
+    <color name="text_dark">#b5babd</color>
+    <color name="black_overlay">#66000000</color>
+
+    <color name="setting_background_color">#EDF3EE</color>
+    <color name="brand_teal">#1FA846</color>
+    <color name="onb_audio_card">#EEF5F3</color>
+    <color name="onb_audio_option">#F6FAF9</color>
+    <color name="onb_audio_option_selected">#FFFFFF</color>
+    <color name="onb_audio_chip_bg">#E1EDE3</color>
+    <color name="onb_audio_chip_text">#1B5E20</color>
+    <color name="divider_color">#1F000000</color>
+    <color name="adaptive_text_color">#DE000000</color>
+
+    <color name="extreme_dark_background">#000000</color>
+    <color name="splash_background">#121417</color>
+    <color name="splash_text_white">#FFFFFF</color>
+    <color name="splash_text_revived">#2ECC55</color>
+
+    <!-- Custom Menu Colors -->
+    <color name="color_projection_blue">#1FA846</color>
+    <color name="color_usb_orange">#f57c00</color>
+    <color name="color_wifi_purple">#8e44ad</color>
+    <color name="color_settings_darkblue">#2c3e50</color>
+
+    <!-- Segmented Button Colors -->
+    <color name="segmented_button_stroke">#808080</color>
+
+    <!-- Home Button Icon Tints -->
+
+    <!-- Failure banner on the main screen. Amber rather than red: these are conditions the user
+         can usually fix, and a red screen on a car dashboard reads as a fault in the car. -->
+    <color name="warning_banner_tint">#26F57C00</color>
+    <color name="warning_banner_stroke">#66F57C00</color>
+    <color name="warning_banner_icon">#F57C00</color>
+
+
+    <!-- Home screen: flat panels, so the zones read apart without elevation on old units.
+         Day colors here, dark ones in values-night. Extreme dark is a theme rather than a
+         resource qualifier, so its colors are the home_extreme_* set and HomeUiHelper picks them. -->
+    <color name="home_panel">#141B17</color>
+    <color name="home_panel_stroke">#00000000</color>
+    <color name="home_tile">#1D2721</color>
+    <color name="home_tile_pressed">#29372E</color>
+    <color name="home_tile_stroke">#00000000</color>
+    <color name="home_slot_stroke">#39414D</color>
+    <color name="home_text">#FFFFFF</color>
+    <color name="home_text_muted">#FFFFFF</color>
+    <color name="home_apps_tile">#166534</color>
+    <color name="home_apps_tile_pressed">#11502A</color>
+    <color name="home_apps_icon">#FFFFFF</color>
+    <color name="home_usb">#B9530F</color>
+    <color name="home_wifi">#1E8E43</color>
+    <color name="home_self">#15803D</color>
+    <color name="home_monochrome">#3A3F47</color>
+    <color name="home_countdown_ring">#99FFFFFF</color>
+
+    <color name="home_extreme_panel">#000000</color>
+    <color name="home_extreme_panel_stroke">#161616</color>
+    <color name="home_extreme_tile">#0A0A0A</color>
+    <color name="home_extreme_tile_pressed">#161616</color>
+    <color name="home_extreme_tile_stroke">#161616</color>
+    <color name="home_extreme_slot_stroke">#262626</color>
+    <color name="home_extreme_text">#B8B8B8</color>
+    <color name="home_extreme_text_muted">#7A7A7A</color>
+    <color name="home_extreme_apps_tile">#0A0A0A</color>
+    <color name="home_extreme_apps_tile_pressed">#161616</color>
+    <color name="home_extreme_apps_icon">#4FA06A</color>
+    <color name="home_extreme_usb">#B87445</color>
+    <color name="home_extreme_wifi">#6FAF80</color>
+    <color name="home_extreme_self">#5FA77A</color>
+    <color name="home_extreme_monochrome">#7A7A7A</color>
+    <color name="home_extreme_countdown_ring">#44B8B8B8</color>
+    <!-- The one-time hint on the launcher home that shows where pages are added. -->
+    <color name="home_hint_scrim">#BD04060A</color>
+    <color name="home_hint_callout">#F3F5F8</color>
+    <color name="home_hint_title">#12161C</color>
+    <color name="home_hint_body">#39414D</color>
+    <color name="home_hint_button">#1E7A43</color>
+    <color name="home_hint_button_focused">#2E9A57</color>
+    <!-- Settings section cards (left column). -->
+    <color name="settings_category_selected">#D6F2DE</color>
+    <color name="settings_category_pressed">#DCE8DF</color>
+    <!-- Material 3 segmented buttons: the chosen segment is a tonal green with a check. -->
+    <color name="segment_selected_bg">#C8F0D2</color>
+    <color name="segment_selected_text">#0A3A17</color>
+    <!-- Updates tab -->
+    <color name="update_card_bg">#EDF3EE</color>
+    <color name="update_icon_glyph">#062B10</color>
+    <color name="update_size_bg">#F1EEC4</color>
+    <color name="update_size_text">#4F4A0C</color>
+    <color name="update_progress_track">#D3E3D7</color>
+    <!-- On the green: white by day, the dark green of the containers at night, so a switch thumb
+         or a filled button never falls back to Material's default purple. -->
+    <color name="brand_on_primary">#FFFFFF</color>
+    <color name="brand_outline">#717971</color>
+    <color name="brand_surface_variant">#DCE5DD</color>
+</resources>

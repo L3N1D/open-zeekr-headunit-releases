@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Carlinkit CPC200 family: 0x1314:0x1520 / 0x1521 -->
+    <usb-device vendor-id="4884" product-id="5408" />
+    <usb-device vendor-id="4884" product-id="5409" />
+</resources>

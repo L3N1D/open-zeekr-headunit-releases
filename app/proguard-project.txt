@@ -1,0 +1,57 @@
+# Add project specific ProGuard rules here.
+
+# --- Protobuf Rules ---
+-keep class com.google.protobuf.** { *; }
+-dontwarn com.google.protobuf.**
+-keepattributes Signature, InnerClasses, EnclosingMethod, *Annotation*
+
+# --- Generated Proto Classes ---
+# Keep all generated protocol buffer classes and their members
+-keep class com.lenid.zoh.aap.protocol.proto.** { *; }
+-keep interface com.lenid.zoh.aap.protocol.proto.** { *; }
+-keep enum com.lenid.zoh.aap.protocol.proto.** { *; }
+
+# --- Reflection Targets ---
+# Ensure these system classes are kept and their members are accessible via reflection
+-keep class android.net.Network { *; }
+-keep class android.net.wifi.WifiInfo { *; }
+
+# --- AndroidX Navigation & Fragments ---
+# Keep NavHostFragment and Navigation classes (referenced in XML)
+-keep class androidx.navigation.** { *; }
+-keep class androidx.fragment.app.FragmentContainerView { *; }
+
+# Keep all fragments in the main package (referenced in nav_graph.xml)
+-keep class com.lenid.zoh.main.** { *; }
+-keep class com.lenid.zoh.main.settings.** { *; }
+
+# --- App Logic ---
+# Keep specific app classes if needed (e.g. accessed via JNI or reflection)
+# -keep class com.lenid.zoh.decoder.** { *; }
+
+# --- JNI ---
+-keep class com.lenid.zoh.decoder.audio.NativeAAudio { *; }
+-keep class com.lenid.zoh.aap.AapSslNative { *; }
+-keep class com.lenid.zoh.decoder.video.FfmpegHevcDecoder { *; }
+-keep class com.lenid.zoh.decoder.video.FfmpegHevcDecoder$Companion { *; }
+
+# --- Conscrypt Rules ---
+-dontwarn org.conscrypt.**
+-keep class org.conscrypt.Conscrypt { *; }
+-keep class org.conscrypt.OpenSSLProvider { *; }
+
+# --- Glide Rules ---
+-keep public class * implements com.bumptech.glide.module.GlideModule
+-keep class * extends com.bumptech.glide.module.AppGlideModule { <init>(...); }
+-keep public enum com.bumptech.glide.load.ImageHeaderParser$** { **[] $VALUES; public *; }
+
+# --- McuCommProxy Rules ---
+-keep class com.adayo.mcucommproxy.McuCommManager { *; }
+-keep interface com.adayo.mcucommproxy.IMcuCommCallback { *; }
+
+-keepclassmembers class * implements com.adayo.mcucommproxy.IMcuCommCallback {
+    public void mcuCommCallback(byte[], char);
+}
+
+# Instantiated by Shizuku in a separate process using its class name and public constructor.
+-keep class com.lenid.zoh.connection.wifi.scan.WifiScanUserService { *; }

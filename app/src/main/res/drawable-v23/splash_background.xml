@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Open Zeekr Headunit's splash window: the colour alone. The splash overlay draws the logo
+     above its name; a second, centred logo here showed through the overlay as it came in. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/splash_background" />
+</layer-list>

@@ -1,0 +1,227 @@
+<resources>
+
+    <style name="AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowBackground">@drawable/bg</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="colorPrimary">@color/brand_teal</item>
+        <item name="colorOnPrimary">@color/brand_on_primary</item>
+        <item name="colorPrimaryContainer">@color/segment_selected_bg</item>
+        <item name="colorOnPrimaryContainer">@color/segment_selected_text</item>
+        <item name="colorSecondary">@color/brand_teal</item>
+        <item name="colorOnSecondary">@color/brand_on_primary</item>
+        <item name="colorSecondaryContainer">@color/segment_selected_bg</item>
+        <item name="colorOnSecondaryContainer">@color/segment_selected_text</item>
+        <item name="colorOutline">@color/brand_outline</item>
+        <item name="colorSurfaceVariant">@color/brand_surface_variant</item>
+        <item name="colorAccent">@color/brand_teal</item>
+        <item name="android:colorAccent">@color/brand_teal</item>
+        <item name="android:dialogTheme">@style/DarkAlertDialog</item>
+        <item name="android:alertDialogTheme">@style/DarkAlertDialog</item>
+        <item name="materialAlertDialogTheme">@style/DarkAlertDialog</item>
+    </style>
+
+    <style name="AppTheme.Translucent" parent="android:Theme.Translucent.NoTitleBar" />
+
+    <style name="AppTheme.Fullscreen" parent="AppTheme">
+        <item name="android:windowFullscreen">true</item>
+    </style>
+
+    <style name="SplashTheme" parent="AppTheme">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+        <item name="android:statusBarColor">@color/splash_background</item>
+        <item name="android:navigationBarColor">@color/splash_background</item>
+    </style>
+
+    <style name="SplashTheme.Fullscreen" parent="SplashTheme">
+        <item name="android:windowFullscreen">true</item>
+    </style>
+
+    <style name="DarkAlertDialog" parent="Theme.Material3.DayNight.Dialog.Alert">
+        <item name="colorPrimary">@color/brand_teal</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="colorSecondary">@color/brand_teal</item>
+        <item name="colorOnSecondary">@android:color/white</item>
+        <item name="android:colorAccent">@color/brand_teal</item>
+        <item name="android:background">?attr/colorSurface</item>
+        <item name="android:textColorPrimary">@color/adaptive_text_color</item>
+        <item name="buttonBarPositiveButtonStyle">@style/DialogButton.Positive</item>
+        <item name="buttonBarNegativeButtonStyle">@style/DialogButton.Negative</item>
+        <item name="shapeAppearance">@style/ShapeAppearanceOverlay.App.Dialog.Rounded</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearanceOverlay.App.Dialog.Rounded</item>
+    </style>
+
+    <style name="DialogButton.Positive" parent="Widget.Material3.Button">
+        <item name="android:textColor">@android:color/white</item>
+        <item name="backgroundTint">@color/brand_teal</item>
+        <item name="android:backgroundTint">@color/brand_teal</item>
+        <item name="android:background">@drawable/btn_primary_teal</item>
+    </style>
+
+    <style name="DialogButton.Negative" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">@color/brand_teal</item>
+        <item name="colorSecondary">@color/brand_teal</item>
+    </style>
+    <style name="DialogWindowTitle" parent="android:Widget.TextView">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">22sp</item>
+    </style>
+
+    <style name="SafetyDialogTheme" parent="Theme.Material3.DayNight.Dialog">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
+    <style name="ThemeOverlay.ExtremeDark" parent="">
+        <item name="colorSurface">@color/extreme_dark_background</item>
+        <item name="android:colorBackground">@color/extreme_dark_background</item>
+        <item name="android:windowBackground">@color/extreme_dark_background</item>
+    </style>
+
+    <style name="ThemeOverlay.GradientBackground" parent="">
+        <item name="android:windowBackground">@drawable/bg_gradient</item>
+    </style>
+
+    <!-- Segmented Button Shapes -->
+    <style name="ShapeAppearance.App.Button.Left" parent="ShapeAppearance.MaterialComponents.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">24dp</item>
+        <item name="cornerSizeBottomLeft">24dp</item>
+        <item name="cornerSizeTopRight">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+
+    <style name="ShapeAppearance.App.Button.Middle" parent="ShapeAppearance.MaterialComponents.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">0dp</item>
+    </style>
+
+    <style name="ShapeAppearance.App.Button.Right" parent="ShapeAppearance.MaterialComponents.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">0dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeTopRight">24dp</item>
+        <item name="cornerSizeBottomRight">24dp</item>
+    </style>
+    <style name="ShapeAppearanceOverlay.App.Dialog.Rounded" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">24dp</item>
+    </style>
+
+    <!-- Home screen tiles: the driver bar and the favorite apps share one look. -->
+    <style name="HomeTile">
+        <item name="android:layout_width">@dimen/home_tile_size</item>
+        <item name="android:layout_height">@dimen/home_tile_size</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:gravity">center</item>
+        <item name="android:background">@drawable/home_tile_bg</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+    <style name="HomeTile.Favorite">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:background">@drawable/home_favorite_slot_bg</item>
+    </style>
+    <style name="HomeTileIcon">
+        <item name="android:layout_width">@dimen/home_tile_icon</item>
+        <item name="android:layout_height">@dimen/home_tile_icon</item>
+        <item name="android:scaleType">fitCenter</item>
+        <item name="android:importantForAccessibility">no</item>
+    </style>
+    <style name="HomeTileLabel">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">6dp</item>
+        <item name="android:paddingLeft">4dp</item>
+        <item name="android:paddingRight">4dp</item>
+        <!-- Centered, so a label that wraps ("Add app" on a narrow row) does not leave its
+             second line hanging against the left edge of the tile. -->
+        <item name="android:gravity">center</item>
+        <!-- One line, for the labels that sit beside their icon or have a one-word name (Exit,
+             All apps). See HomeTileLabel.Wrap for the bar's connection tiles and the favorites. -->
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textSize">@dimen/home_tile_label</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="HomeTileLabel.Wrap">
+        <!-- Two lines, so a narrow tile stacks "Self Mode" instead of ellipsizing it to "Sel...".
+             Use it with WordFitTextView, which only breaks between words. The landscape bar's
+             tiles shrink with the screen, but their icon and label shrink with them, and two lines
+             still fit down to about 65% of the smallest tile size. -->
+        <item name="android:maxLines">2</item>
+    </style>
+    <style name="HomeCardText">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+    <!-- HomeActionDialog draws its own rounded panel, so the window under it has to be clear:
+         the platform's dialog background showed in the panel's corners. -->
+    <style name="HomeActionDialog" parent="@android:style/Theme.Dialog">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFrame">@null</item>
+        <item name="android:backgroundDimEnabled">true</item>
+    </style>
+
+
+    <!-- Material 3 segmented button: pill ends, 1dp outline, a tonal fill and a check on the
+         chosen segment. Taller than the 40dp spec so it is easy to hit on the head unit. -->
+    <style name="Widget.OZH.SegmentedButton" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="backgroundTint">@color/segment_bg</item>
+        <item name="android:textColor">@color/segment_text</item>
+        <item name="iconTint">@color/segment_text</item>
+        <item name="iconSize">18dp</item>
+        <item name="iconPadding">8dp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="strokeColor">?attr/colorOutline</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Material3.Corner.Full</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:minHeight">52dp</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:checkable">true</item>
+    </style>
+
+    <!-- A quick action in the home grid: the grid gives it its size, so it only centers its
+         icon and label, both bigger than the old bar's, to be read and hit at a glance. -->
+    <style name="HomeTile.Grid">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">0dp</item>
+        <item name="android:padding">8dp</item>
+    </style>
+    <style name="HomeTileIcon.Grid">
+        <item name="android:layout_width">@dimen/home_grid_icon</item>
+        <item name="android:layout_height">@dimen/home_grid_icon</item>
+    </style>
+    <style name="HomeTileLabel.Grid" parent="HomeTileLabel.Wrap">
+        <item name="android:layout_marginTop">10dp</item>
+        <item name="android:textSize">@dimen/home_grid_label</item>
+    </style>
+    <!-- Exit in the top bar: icon and word side by side in a pill. -->
+    <style name="HomeTile.Pill">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:paddingLeft">16dp</item>
+        <item name="android:paddingRight">18dp</item>
+    </style>
+    <style name="HomeTileLabel.Pill" parent="HomeTileLabel">
+        <item name="android:layout_marginTop">0dp</item>
+        <item name="android:layout_marginLeft">8dp</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+</resources>
