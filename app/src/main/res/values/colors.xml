@@ -51,21 +51,21 @@
     <!-- Home screen: flat panels, so the zones read apart without elevation on old units.
          Day colors here, dark ones in values-night. Extreme dark is a theme rather than a
          resource qualifier, so its colors are the home_extreme_* set and HomeUiHelper picks them. -->
-    <color name="home_panel">#141B17</color>
+    <color name="home_panel">#E6EEE3</color>
     <color name="home_panel_stroke">#00000000</color>
-    <color name="home_tile">#1D2721</color>
-    <color name="home_tile_pressed">#29372E</color>
+    <color name="home_tile">#DDE8D9</color>
+    <color name="home_tile_pressed">#C9DDC5</color>
     <color name="home_tile_stroke">#00000000</color>
     <color name="home_slot_stroke">#39414D</color>
-    <color name="home_text">#FFFFFF</color>
-    <color name="home_text_muted">#FFFFFF</color>
-    <color name="home_apps_tile">#166534</color>
-    <color name="home_apps_tile_pressed">#11502A</color>
-    <color name="home_apps_icon">#FFFFFF</color>
+    <color name="home_text">#172117</color>
+    <color name="home_text_muted">#455442</color>
+    <color name="home_apps_tile">#C6EDB6</color>
+    <color name="home_apps_tile_pressed">#B1DDA0</color>
+    <color name="home_apps_icon">#16380C</color>
     <color name="home_usb">#B9530F</color>
     <color name="home_wifi">#1E8E43</color>
     <color name="home_self">#15803D</color>
-    <color name="home_monochrome">#3A3F47</color>
+    <color name="home_monochrome">#455442</color>
     <color name="home_countdown_ring">#99FFFFFF</color>
 
     <color name="home_extreme_panel">#000000</color>
@@ -108,4 +108,6 @@
     <color name="brand_on_primary">#FFFFFF</color>
     <color name="brand_outline">#717971</color>
     <color name="brand_surface_variant">#DCE5DD</color>
+    <color name="expressive_background">#F4F7F1</color>
+    <color name="expressive_surface">#F9FCF6</color>
 </resources>

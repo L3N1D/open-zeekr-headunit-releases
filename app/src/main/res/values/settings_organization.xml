@@ -1,0 +1,10 @@
+<resources>
+    <string name="settings_connection_section">Connection</string>
+    <string name="settings_picture_section">Picture and video</string>
+    <string name="settings_vehicle_section">Vehicle</string>
+    <string name="settings_appearance_section">Appearance</string>
+    <string name="settings_transfer_section">Transfer and reset</string>
+    <string name="settings_diagnostics_section">Diagnostics</string>
+    <string name="settings_updates_section">Updates and about</string>
+    <string name="settings_reset_preserves_files">Restore default settings. Backups and app files are kept.</string>
+</resources>

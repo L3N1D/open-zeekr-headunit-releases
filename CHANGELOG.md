@@ -1,4 +1,13 @@
 # Changelog
+
+### Open Zeekr Headunit 1.0.3 — 2026-11-11
+- Refreshed home and settings with expressive shapes, larger typography and day/night surfaces.
+- Organized settings by task, retaining search and existing preference keys.
+- Unified reset under Transfer and reset with confirmation.
+- Fixed OTA asset selection for this repository; validate package, signature and version before installation.
+- Prevent update installation during an active Android Auto connection.
+- Dismiss restored onboarding when setup has already been completed; manual setup remains available.
+
 ### 4.0.0-alpha
 - New Homescreen, thanks to @andrecuellar
 - AAP: send one version request over TCP, so a slow head unit server is not left deaf

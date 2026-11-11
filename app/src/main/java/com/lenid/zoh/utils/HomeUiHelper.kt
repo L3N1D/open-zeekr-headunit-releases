@@ -185,7 +185,8 @@ object HomeUiHelper {
     ) {
         val isDark: Boolean get() = mode != Mode.DAY
         val ripple: Int get() = when (mode) {
-            Mode.DAY, Mode.DARK -> RIPPLE_COLOR_ON_DARK
+            Mode.DAY -> RIPPLE_COLOR
+            Mode.DARK -> RIPPLE_COLOR_ON_DARK
             Mode.EXTREME_DARK -> RIPPLE_COLOR_EXTREME
         }
     }
@@ -217,6 +218,8 @@ object HomeUiHelper {
 
     /** Paints what does not change with the connection state: the bar panel, Exit, All and the countdown ring. */
     fun applyTheme(context: Context, rootView: View, palette: Palette) {
+        rootView.setBackgroundColor(ContextCompat.getColor(context,
+            if (palette.mode == Mode.EXTREME_DARK) R.color.extreme_dark_background else R.color.expressive_background))
         val resources = context.resources
         val panelRadius = resources.getDimension(R.dimen.home_panel_radius)
         val strokePx = dp(context, 1)
@@ -224,6 +227,9 @@ object HomeUiHelper {
             shape(palette.panel, panelRadius, palette.panelStroke, strokePx)
         rootView.findViewById<ViewGroup>(R.id.exit_button)?.let {
             paintTile(it, tileBackground(context, palette), palette.textMuted, palette.textMuted)
+        }
+        rootView.findViewById<ViewGroup>(R.id.card_button)?.let {
+            paintTile(it, tileBackground(context, palette), palette.text, palette.text)
         }
         rootView.findViewById<ViewGroup>(R.id.apps_button)?.let {
             val radius = resources.getDimension(R.dimen.home_tile_radius)

@@ -3,8 +3,8 @@
          (320x533dp) used to take these values on height alone and then clip the main button's
          action, so the width qualifier keeps them for real head units. -->
     <dimen name="home_gap">20dp</dimen>
-    <dimen name="home_panel_radius">28dp</dimen>
-    <dimen name="home_tile_radius">22dp</dimen>
+    <dimen name="home_panel_radius">32dp</dimen>
+    <dimen name="home_tile_radius">28dp</dimen>
     <dimen name="home_tile_size">96dp</dimen>
     <dimen name="home_tile_icon">34dp</dimen>
     <dimen name="home_tile_label">16sp</dimen>

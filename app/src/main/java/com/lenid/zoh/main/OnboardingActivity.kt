@@ -115,6 +115,12 @@ class OnboardingActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (!OnboardingLaunchPolicy.shouldShow(settings.onboardingVersion,
+                CURRENT_ONBOARDING_VERSION, intent.getBooleanExtra(EXTRA_MANUAL_SETUP, false))) {
+            AppLog.i("OnboardingActivity: setup already completed; dismissing restored wizard")
+            finish()
+            return
+        }
 
         // Match the app theme overlays used by MainActivity/SettingsActivity so the wizard
         // honours Extreme Dark (pure black) and the gradient background.
@@ -203,6 +209,7 @@ class OnboardingActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (isFinishing || !::flipper.isInitialized) return
         // Reflect any changes made in deep-linked settings screens (theme, automation) or after
         // returning from a special-permission settings screen (overlay / modify system settings).
         updateThemeButtonText()
@@ -1320,6 +1327,7 @@ class OnboardingActivity : BaseActivity() {
     }
 
     companion object {
+        const val EXTRA_MANUAL_SETUP = "manual_setup"
         const val CURRENT_ONBOARDING_VERSION = 2
         // Set when the user chooses "Do it later" so MainActivity does not immediately
         // relaunch the wizard this session. Resets on process restart (next app open).

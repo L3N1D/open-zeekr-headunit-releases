@@ -13,8 +13,9 @@ object UpdateLinkPolicy {
     /** Only this application's release artifacts, never APKs for the previous package. */
     fun pickApk(assets: List<Pair<String, String>>): String? {
         for ((name, url) in assets) {
-            if (name.startsWith("${BuildConfig.APPLICATION_ID}_") &&
-                name.endsWith(".apk") && !name.endsWith("_debug.apk") && url.isNotEmpty()) return url
+            if ((name == "open-zeekr-headunit.apk" ||
+                (name.startsWith("${BuildConfig.APPLICATION_ID}_") && name.endsWith(".apk") && !name.endsWith("_debug.apk"))) &&
+                url.startsWith("https://")) return url
         }
         return null
     }

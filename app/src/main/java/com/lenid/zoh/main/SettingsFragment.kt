@@ -106,7 +106,6 @@ class SettingsFragment : Fragment() {
     private lateinit var settingsAdapter: SettingsAdapter
     private lateinit var toolbar: MaterialToolbar
     private var saveButton: MaterialButton? = null
-    private var resetButton: MaterialButton? = null
 
     // Basic/Advanced tab + search state (Feature A)
     private var settingsTabGroup: com.google.android.material.button.MaterialButtonToggleGroup? = null
@@ -406,16 +405,6 @@ class SettingsFragment : Fragment() {
             handleBackPress()
         }
 
-        val resetItem = toolbar.menu.add(0, RESET_ITEM_ID, 0, getString(R.string.reset_settings))
-        resetItem.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS)
-        resetItem.setActionView(R.layout.layout_reset_button)
-
-        resetButton = resetItem.actionView?.findViewById(R.id.reset_button_widget)
-        resetButton?.contentDescription = getString(R.string.reset_settings)
-        resetButton?.setOnClickListener {
-            startResetSettings()
-        }
-
         // Add the Save item with custom layout
         val saveItem = toolbar.menu.add(0, SAVE_ITEM_ID, 1, getString(R.string.save))
         saveItem.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS)
@@ -703,7 +692,8 @@ class SettingsFragment : Fragment() {
             nameResId = R.string.auto_optimize,
             value = getString(R.string.auto_optimize_desc),
             onClick = { _ ->
-                onboardingLauncher.launch(Intent(requireContext(), OnboardingActivity::class.java))
+                onboardingLauncher.launch(Intent(requireContext(), OnboardingActivity::class.java)
+                    .putExtra(OnboardingActivity.EXTRA_MANUAL_SETUP, true))
             }
         ))
 
@@ -2187,23 +2177,8 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SettingEntry(
             stableId = "resetSettings",
             nameResId = R.string.reset_settings,
-            value = getString(R.string.reset_settings_description),
-            onClick = {
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.reset_settings)
-                    .setMessage(R.string.reset_settings_confirm)
-                    .setPositiveButton(R.string.reset) { _, _ ->
-                        settings.reset()
-
-                        // Proper App Restart
-                        val intent = requireActivity().packageManager.getLaunchIntentForPackage(requireActivity().packageName)
-                        intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                        requireActivity().startActivity(intent)
-                        requireActivity().finish()
-                    }
-                    .setNegativeButton(R.string.cancel, null)
-                    .show()
-            }
+            value = getString(R.string.settings_reset_preserves_files),
+            onClick = { startResetSettings() }
         ))
 
         // --- Debug Settings ---
@@ -2591,7 +2566,7 @@ class SettingsFragment : Fragment() {
             ))
         }
 
-        fullSettingsList = items
+        fullSettingsList = com.lenid.zoh.main.settings.SettingsOrganization.organize(items)
         renderSettings(scrollState)
     }
 
@@ -2683,7 +2658,7 @@ class SettingsFragment : Fragment() {
     /** The chosen section, or the first one when it is gone (or none was chosen yet). */
     private fun currentCategoryId(full: List<SettingItem>): String? {
         val ids = visibleCategories(full).map { it.stableId }
-        val id = lastCategoryId?.takeIf { it in ids } ?: ids.firstOrNull()
+        val id = lastCategoryId?.let { com.lenid.zoh.main.settings.SettingsOrganization.canonicalCategory(it) }?.takeIf { it in ids } ?: ids.firstOrNull()
         lastCategoryId = id
         return id
     }
@@ -2833,10 +2808,10 @@ class SettingsFragment : Fragment() {
 
     private fun categoryIcon(id: String): Int = when (id) {
         "general" -> R.drawable.ic_settings_white
-        "wirelessConnection" -> R.drawable.ic_wifi
+        "connection", "wirelessConnection" -> R.drawable.ic_wifi
         "dongle" -> R.drawable.ic_dongle_white
         "automation" -> R.drawable.ic_play
-        "moreFeatures" -> R.drawable.ic_apps
+        "moreFeatures" -> R.drawable.ic_directions_car
         "navigation" -> R.drawable.ic_directions_car
         "graphic" -> R.drawable.ic_image
         "theming" -> R.drawable.ic_settings_quick

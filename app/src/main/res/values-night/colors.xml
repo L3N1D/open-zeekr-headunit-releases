@@ -44,4 +44,6 @@
     <color name="brand_on_primary">#0A3A17</color>
     <color name="brand_outline">#8B938C</color>
     <color name="brand_surface_variant">#3A443D</color>
+    <color name="expressive_background">#101510</color>
+    <color name="expressive_surface">#192019</color>
 </resources>

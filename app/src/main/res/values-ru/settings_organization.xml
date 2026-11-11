@@ -1,0 +1,10 @@
+<resources>
+    <string name="settings_connection_section">Подключение</string>
+    <string name="settings_picture_section">Изображение и видео</string>
+    <string name="settings_vehicle_section">Автомобиль</string>
+    <string name="settings_appearance_section">Оформление</string>
+    <string name="settings_transfer_section">Перенос и сброс</string>
+    <string name="settings_diagnostics_section">Диагностика</string>
+    <string name="settings_updates_section">Обновления и информация</string>
+    <string name="settings_reset_preserves_files">Восстановить настройки по умолчанию. Резервные копии и файлы приложения сохранятся.</string>
+</resources>

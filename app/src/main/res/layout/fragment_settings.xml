@@ -107,12 +107,16 @@
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/settingsSearchLayout"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    style="@style/Widget.Material3.TextInputLayout.FilledBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="@string/settings_search_hint"
                     app:startIconDrawable="@drawable/ic_search"
-                    app:endIconMode="clear_text">
+                    app:endIconMode="clear_text"
+                    app:boxCornerRadiusTopStart="28dp"
+                    app:boxCornerRadiusTopEnd="28dp"
+                    app:boxCornerRadiusBottomStart="28dp"
+                    app:boxCornerRadiusBottomEnd="28dp">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/settingsSearch"

@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Build
 import com.lenid.zoh.BuildConfig
 import com.lenid.zoh.ssl.ConscryptInitializer
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -88,7 +89,7 @@ data class UpdateInfo(
 object UpdateChecker {
     private const val TAG = "UpdateChecker"
     /** Open Zeekr Headunit's own releases: APKs signed with the key its installs carry. */
-    private const val GITHUB_RELEASES_API = "https://api.github.com/repos/L3N1D/open-zeekr-headunit-releases/releases?per_page=5"
+    private const val GITHUB_RELEASES_API = "https://api.github.com/repos/L3N1D/open-zeekr-headunit-releases/releases?per_page=30"
     const val GITHUB_RELEASES_WEB = "https://github.com/L3N1D/open-zeekr-headunit-releases/releases"
 
     fun isPlayStoreInstallation(context: Context): Boolean {
@@ -107,6 +108,7 @@ object UpdateChecker {
     }
 
     suspend fun check(context: Context): Result<UpdateInfo> = withContext(Dispatchers.IO) {
+        var connection: HttpURLConnection? = null
         try {
             val url = URL(GITHUB_RELEASES_API)
             val conn = (url.openConnection() as HttpURLConnection).apply {
@@ -116,6 +118,7 @@ object UpdateChecker {
                 setRequestProperty("User-Agent", "OpenHeadunit-App")
                 setRequestProperty("Accept", "application/vnd.github.v3+json")
             }
+            connection = conn
             if (conn is HttpsURLConnection) {
                 ConscryptInitializer.httpsSocketFactory(context)?.let { conn.sslSocketFactory = it }
             }
@@ -144,7 +147,7 @@ object UpdateChecker {
             for (i in 0 until releasesJson.length()) {
                 val rel = releasesJson.getJSONObject(i)
                 val isDraft = rel.optBoolean("draft", false)
-                if (isDraft) continue
+                if (isDraft || rel.optBoolean("prerelease", false)) continue
 
                 val tagName = rel.optString("tag_name", "")
                 val parsed = AppVersion.parse(tagName) ?: continue
@@ -184,6 +187,8 @@ object UpdateChecker {
                     apkSize = newestSize
                 )
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: java.io.IOException) {
             // No network is the car's usual state, not a fault worth a report.
             AppLog.w("$TAG: Update check failed: ${e.message}")
@@ -191,6 +196,8 @@ object UpdateChecker {
         } catch (e: Exception) {
             AppLog.e("$TAG: Update check failed: ${e.message}", e)
             Result.failure(e)
+        } finally {
+            connection?.disconnect()
         }
     }
 

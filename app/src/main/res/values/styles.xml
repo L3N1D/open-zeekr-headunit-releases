@@ -15,6 +15,8 @@
         <item name="colorOnSecondary">@color/brand_on_primary</item>
         <item name="colorSecondaryContainer">@color/segment_selected_bg</item>
         <item name="colorOnSecondaryContainer">@color/segment_selected_text</item>
+        <item name="android:colorBackground">@color/expressive_background</item>
+        <item name="colorSurface">@color/expressive_surface</item>
         <item name="colorOutline">@color/brand_outline</item>
         <item name="colorSurfaceVariant">@color/brand_surface_variant</item>
         <item name="colorAccent">@color/brand_teal</item>

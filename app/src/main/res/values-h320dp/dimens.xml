@@ -8,8 +8,8 @@
         800x480 screens already use.
     -->
     <dimen name="home_gap">6dp</dimen>
-    <dimen name="home_panel_radius">14dp</dimen>
-    <dimen name="home_tile_radius">10dp</dimen>
+    <dimen name="home_panel_radius">32dp</dimen>
+    <dimen name="home_tile_radius">28dp</dimen>
     <dimen name="home_tile_size">56dp</dimen>
     <dimen name="home_tile_icon">20dp</dimen>
     <dimen name="home_tile_label">10sp</dimen>

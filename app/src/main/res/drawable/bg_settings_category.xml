@@ -8,13 +8,13 @@
     <item android:state_pressed="true">
         <shape>
             <solid android:color="@color/settings_category_pressed" />
-            <corners android:radius="18dp" />
+            <corners android:radius="28dp" />
         </shape>
     </item>
     <item>
         <shape>
             <solid android:color="@color/setting_background_color" />
-            <corners android:radius="18dp" />
+            <corners android:radius="28dp" />
         </shape>
     </item>
 </selector>

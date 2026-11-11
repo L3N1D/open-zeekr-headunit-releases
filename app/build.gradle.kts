@@ -93,8 +93,8 @@ android {
         applicationId = "com.lenid.zoh"
         minSdk = 16
         targetSdk = 36
-        versionCode = 124
-        versionName = "1.0.2"
+        versionCode = 125
+        versionName = "1.0.3"
         setProperty("archivesBaseName", "${applicationId}_${versionName}")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled = true
@@ -140,7 +140,7 @@ android {
             // Zeekr's firmware runs AOSP test-keys: signed with that platform key, the app holds
             // MANAGE_USB and grants itself USB permission (connection/usb/UsbSelfGrant). The
             // keystore is the AOSP platform.pk8/x509.pem pair, which is public.
-            rootProject.file("autotheme/keys/platform.p12").takeIf { it.exists() }?.let {
+            rootProject.file("keys/platform.p12").takeIf { it.exists() }?.let {
                 storeFile = it
                 storeType = "PKCS12"
                 storePassword = "android"

@@ -6,7 +6,7 @@ import org.junit.Test
 
 class UpdateLinkPolicyTest {
 
-    private val base = "https://github.com/andreknieriem/open-headunit/releases"
+    private val base = "https://github.com/L3N1D/open-zeekr-headunit-releases/releases"
     private val page = "$base/tag/v.3.5.0-beta3"
     private val apk = "$base/download/v.3.5.0-beta3/com.lenid.zoh_3.5.0-beta3.apk"
     private val debugApk = "$base/download/v.3.5.0-beta3/com.lenid.zoh_3.5.0-beta3_debug.apk"
@@ -18,6 +18,12 @@ class UpdateLinkPolicyTest {
             "com.lenid.zoh_3.5.0-beta3.apk" to apk,
         )
         assertEquals(apk, UpdateLinkPolicy.pickApk(assets))
+    }
+
+    @Test
+    fun supportsTheExistingRepositoryReleaseName() {
+        assertEquals(apk, UpdateLinkPolicy.pickApk(listOf("open-zeekr-headunit.apk" to apk)))
+        assertNull(UpdateLinkPolicy.pickApk(listOf("open-zeekr-headunit.apk" to "http://example.com/update.apk")))
     }
 
     @Test

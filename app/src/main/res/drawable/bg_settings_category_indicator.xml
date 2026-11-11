@@ -2,5 +2,5 @@
 <!-- The sliding highlight behind the chosen settings section. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
     <solid android:color="@color/settings_category_selected" />
-    <corners android:radius="18dp" />
+    <corners android:radius="28dp" />
 </shape>
