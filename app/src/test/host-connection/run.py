@@ -825,6 +825,8 @@ class Context{
 }
 ''')
 (OUT/'App.kt').write_text('package android.app\nobject Application{const val AUDIO_SERVICE="audio"}\nclass ActivityManager{val appTasks=emptyList<AppTask>();class AppTask{fun finishAndRemoveTask(){}}}\n')
+# Cluster video is an Android rendering boundary, outside this connection-lifecycle harness.
+(OUT/'ClusterVideo.kt').write_text('package com.lenid.zoh.mirror\nobject ClusterVideo { fun reset() {} }\n')
 (OUT/'Media.kt').write_text('package android.media\nclass AudioManager{fun interface OnAudioFocusChangeListener{fun onAudioFocusChange(i:Int)};companion object{const val STREAM_MUSIC=3;const val AUDIOFOCUS_GAIN=1}}\n')
 (OUT/'Service.kt').write_text('package com.lenid.zoh.aap\nclass AapService{companion object{const val ACTION_STOP_SERVICE="stop";var killProcessOnDestroy=false;var destroyIsUserStop=false}}\n')
 (OUT/'Proto.kt').write_text(r'''package com.lenid.zoh.aap.protocol.proto
