@@ -93,8 +93,8 @@ android {
         applicationId = "com.lenid.zoh"
         minSdk = 16
         targetSdk = 36
-        versionCode = 126
-        versionName = "1.0.4"
+        versionCode = 127
+        versionName = "1.0.5"
         setProperty("archivesBaseName", "${applicationId}_${versionName}")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         resourceConfigurations += listOf("en", "ru")
@@ -105,7 +105,7 @@ android {
         // This is scanned at build time from values-XX directories
         buildConfigField("String", "AVAILABLE_LOCALES", "\"${availableLocales.joinToString(",")}\"")
         buildConfigField("String", "GIT_SHA", "\"$gitDescription\"")
-        // Where crash reports go (Sentry's public DSN, see utils/CrashJournal.kt): "sentry.dsn" in
+        // Crash reports use the Sentry-compatible Store API (including Bugsink): "sentry.dsn" in
         // local.properties, so it stays out of the source; empty keeps them on the unit only.
         val sentryDsn = rootProject.file("local.properties").takeIf { it.exists() }?.let { f ->
             Properties().apply { f.inputStream().use { load(it) } }.getProperty("sentry.dsn")

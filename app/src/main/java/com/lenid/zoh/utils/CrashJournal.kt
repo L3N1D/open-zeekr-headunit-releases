@@ -261,7 +261,7 @@ object CrashJournal {
             if (!post(dsn, event)) return // offline or refused: try again with the next report or start
             f.renameTo(File(sentDir(context), f.name))
             File(f.parentFile, f.name + ".json").delete()
-            AppLog.i("$TAG: sent ${f.name} to Sentry")
+            AppLog.i("$TAG: sent ${f.name} to crash server")
         }
     }
 
@@ -329,10 +329,10 @@ object CrashJournal {
         c.outputStream.use { it.write(event.toString().toByteArray()) }
         val code = c.responseCode
         c.disconnect()
-        if (code !in 200..299) AppLog.w("$TAG: Sentry answered $code")
+        if (code !in 200..299) AppLog.w("$TAG: Crash server answered $code")
         code in 200..299
     } catch (e: Exception) {
-        AppLog.w("$TAG: Sentry unreachable: ${e.message}")
+        AppLog.w("$TAG: Crash server unreachable: ${e.message}")
         false
     }
 }
