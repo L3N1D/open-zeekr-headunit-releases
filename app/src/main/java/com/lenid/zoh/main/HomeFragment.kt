@@ -47,7 +47,6 @@ import com.lenid.zoh.R
 import com.lenid.zoh.aap.AapProjectionActivity
 import com.lenid.zoh.aap.AapService
 import com.lenid.zoh.connection.usb.UsbDeviceCompat
-import com.lenid.zoh.connection.usb.UsbDeviceDiagnostics
 import android.content.res.Configuration
 import com.lenid.zoh.utils.AppLog
 import com.lenid.zoh.utils.AppPermissions
@@ -65,8 +64,6 @@ import com.lenid.zoh.utils.ToastUtils
 import com.google.android.material.button.MaterialButton
 import com.lenid.zoh.utils.BluetoothHelper
 import com.lenid.zoh.location.LocationHolder
-import com.lenid.zoh.connection.usb.UsbReceiver
-import com.lenid.zoh.connection.usb.UsbAccessoryMode
 import com.lenid.zoh.connection.wifi.WifiLauncherMode
 import com.lenid.zoh.connection.wifi.WirelessSelectionPolicy
 import kotlinx.coroutines.withContext
@@ -103,6 +100,11 @@ class HomeFragment : Fragment() {
     private lateinit var wifiTile: View
     private lateinit var exitButton: View
     private lateinit var appsButton: View
+    private var devicePicker: HomeDevicePicker? = null
+    private var deviceInventory = HomeDeviceInventory.Snapshot(emptyList(), false)
+    private var inventoryJob: Job? = null
+    private var selectedHomeDevice: String? = null
+    private var lastDeviceConnectAt = 0L
     private var primaryAction: View? = null
     private var primaryCancel: View? = null
     private lateinit var favoriteSlots: List<View>
@@ -180,6 +182,7 @@ class HomeFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         savedInstanceState?.let { state ->
+            selectedHomeDevice = state.getString("home_selected_device")
             pendingWidgetId = state.getInt(STATE_PENDING_WIDGET_ID, -1)
             pendingWidgetPage = state.getInt(STATE_PENDING_WIDGET_PAGE, -1).takeIf { it >= 0 }
         }
@@ -187,6 +190,7 @@ class HomeFragment : Fragment() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
+        outState.putString("home_selected_device", devicePicker?.selectedKey ?: selectedHomeDevice)
         outState.putInt(STATE_PENDING_WIDGET_ID, pendingWidgetId)
         outState.putInt(STATE_PENDING_WIDGET_PAGE, pendingWidgetPage ?: -1)
     }
@@ -228,6 +232,14 @@ class HomeFragment : Fragment() {
             container.findViewById<View>(id)?.setOnLongClickListener { showPageMenu(widgetPage = null) }
         }
         setupListeners()
+        devicePicker = HomeDevicePicker(container.context).also { picker ->
+            picker.selectedKey = selectedHomeDevice
+            picker.onRefresh = ::refreshHomeDevices
+            picker.onConnect = ::connectHomeDevice
+            picker.onCancel = ::onPrimaryCancelClicked
+            container.findViewById<FrameLayout>(R.id.home_primary_card).addView(
+                picker, FrameLayout.LayoutParams(-1, -1))
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -286,7 +298,25 @@ class HomeFragment : Fragment() {
             }
         }
 
-        mainViewModel.usbDevices.observe(viewLifecycleOwner) { renderHome() }
+        mainViewModel.usbDevices.observe(viewLifecycleOwner) { refreshHomeDevices(); renderHome() }
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                val ctx = requireContext()
+                val receiver = object : android.content.BroadcastReceiver() {
+                    override fun onReceive(context: Context?, intent: Intent?) { refreshHomeDevices() }
+                }
+                val filter = android.content.IntentFilter().apply {
+                    addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+                    addAction(BluetoothDevice.ACTION_ACL_CONNECTED)
+                    addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED)
+                    addAction(android.bluetooth.BluetoothAdapter.ACTION_STATE_CHANGED)
+                }
+                // Bluetooth broadcasts can originate from a privileged process outside system UID.
+                ContextCompat.registerReceiver(ctx, receiver, filter, ContextCompat.RECEIVER_EXPORTED)
+                try { refreshHomeDevices(); kotlinx.coroutines.awaitCancellation() }
+                finally { ctx.unregisterReceiver(receiver) }
+            }
+        }
         mainViewModel.homePressed.observe(viewLifecycleOwner) { showFirstPage(animate = isResumed) }
 
         val appSettings = App.provide(requireContext()).settings
@@ -434,7 +464,7 @@ class HomeFragment : Fragment() {
         // connection, the one the card offers included. Otherwise, on a page without the card, a
         // unit with a single chosen mode has no way to start it.
         val barConnections = HomePrimaryPolicy.barConnections(
-            decision, chosen, HomePagesPolicy.barCarriesEveryConnection(pageCount)
+            decision, chosen, true
         )
         HomeUiHelper.applyBar(ctx, root, appSettings, barConnections, palette, decision.tiles)
         HomeUiHelper.applyPrimaryCard(
@@ -443,10 +473,101 @@ class HomeFragment : Fragment() {
         )
         HomeUiHelper.fitDriverBar(root, appSettings.homeButtonScalePercent)
         renderHomeInfo()
+        renderDevicePicker(root, palette)
         reportBringUpOwner()
         // Cancel, the progress bar and the step come and go with the status, so the lines that fit
         // change with it, not only with the layout.
-        scheduleCardFit(root)
+        if (devicePicker?.visibility != View.VISIBLE) scheduleCardFit(root)
+    }
+
+    private fun refreshHomeDevices() {
+        val ctx = context?.applicationContext ?: return
+        if (view == null) return
+        inventoryJob?.cancel()
+        inventoryJob = viewLifecycleOwner.lifecycleScope.launch {
+            val snapshot = withContext(Dispatchers.IO) {
+                try { HomeDeviceInventory.read(ctx) }
+                catch (e: Exception) {
+                    if (e is kotlinx.coroutines.CancellationException) throw e
+                    AppLog.w("Home device inventory unavailable: ${e.javaClass.simpleName}")
+                    HomeDeviceInventory.Snapshot(emptyList(), true)
+                }
+            }
+            deviceInventory = snapshot
+            inventoryJob = null
+            renderHome()
+        }
+    }
+
+    private fun renderDevicePicker(root: View, palette: HomeUiHelper.Palette) {
+        val picker = devicePicker ?: return
+        val show = decision?.let { HomeDeviceSelection.showsInventory(it.status) } == true
+        picker.visibility = if (show) View.VISIBLE else View.GONE
+        root.findViewById<View>(R.id.home_primary_content)?.visibility = if (show) View.INVISIBLE else View.VISIBLE
+        if (show) {
+            root.findViewById<View>(R.id.home_info)?.visibility = View.GONE
+            picker.render(deviceInventory.devices, deviceInventory.bluetoothUnavailable, palette,
+                decision?.stage?.let { getString(it.label) }, decision?.stage != null, inventoryJob?.isActive == true)
+        }
+    }
+
+    private fun connectHomeDevice(device: HomeDevice) {
+        if (SystemClock.elapsedRealtime() - lastDeviceConnectAt < 1000L) return
+        lastDeviceConnectAt = SystemClock.elapsedRealtime()
+        val ctx = requireContext()
+        if (commManager.isConnected) { openProjection(); return }
+        if (decision?.let { !HomeDeviceSelection.showsInventory(it.status) } == true) return
+        stopAutoConnectCountdown()
+        val source = devicePicker ?: return
+        val settings = App.provide(ctx).settings
+        val usb = UsbDeviceCompat.usbManager(ctx)
+        val wired = device.kind in setOf(HomeDevice.Kind.AA_USB, HomeDevice.Kind.CARPLAY_USB, HomeDevice.Kind.DONGLE)
+        val usbDevice = if (wired) usb?.deviceList?.get(device.key) else null
+        if (wired && usbDevice == null) {
+            ToastUtils.showToast(ctx, R.string.home_device_gone, Toast.LENGTH_SHORT, force = true)
+            refreshHomeDevices(); return
+        }
+        when (device.kind) {
+            HomeDevice.Kind.AA_USB -> HomeUsbConnect.connect(ctx, settings,
+                viewLifecycleOwner.lifecycleScope, UsbDeviceCompat(usbDevice!!), ::refreshHomeDevices)
+            HomeDevice.Kind.AA_WIRELESS -> {
+                if (settings.wifiConnectionMode == WifiLauncherMode.NATIVE) {
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        val phones = withContext(Dispatchers.IO) {
+                            try { BluetoothHelper.driverCandidates(ctx, settings.nativePreferredDeviceMac, settings.lastConnectedNativeMac) }
+                            catch (_: SecurityException) { null }
+                        }
+                        if (phones?.deviceFor(device.key) == null) {
+                            ToastUtils.showToast(ctx, R.string.home_device_gone, Toast.LENGTH_SHORT, force = true)
+                            refreshHomeDevices()
+                        } else connectToNativeDevice(device.key, device.name,
+                            phones.connectedAll.map { it.address }, explicit = true)
+                    }
+                } else onWifiClicked() // Other Wi-Fi backends retain their existing selection flow.
+            }
+            HomeDevice.Kind.CARPLAY_USB, HomeDevice.Kind.CARPLAY_WIRELESS -> {
+                if (Build.VERSION.SDK_INT < 24) return
+                if (wired && usb?.deviceList?.values?.count { it.vendorId == 0x05ac } != 1) {
+                    ToastUtils.showToast(ctx, R.string.home_device_one_iphone, Toast.LENGTH_LONG, force = true)
+                    return
+                }
+                com.lenid.zoh.utils.ConnectionOrigin.remember(requireActivity(), source)
+                startActivity(Intent(ctx, com.lenid.zoh.carplay.DirectCarPlayActivity::class.java).apply {
+                    putExtra(com.lenid.zoh.carplay.DirectCarPlayActivity.EXTRA_HOME_CONNECT, true)
+                    putExtra(com.lenid.zoh.carplay.DirectCarPlayActivity.EXTRA_HOME_WIRELESS, !wired)
+                    if (!wired) putExtra(com.lenid.zoh.carplay.DirectCarPlayActivity.EXTRA_HOME_ADDRESS, device.key)
+                    else putExtra(com.lenid.zoh.carplay.DirectCarPlayActivity.EXTRA_HOME_USB, device.key)
+                })
+                @Suppress("DEPRECATION")
+                requireActivity().overridePendingTransition(0, 0)
+            }
+            HomeDevice.Kind.DONGLE -> {
+                com.lenid.zoh.utils.ConnectionOrigin.remember(requireActivity(), source)
+                startActivity(Intent(ctx, com.lenid.zoh.dongle.DongleActivity::class.java))
+                @Suppress("DEPRECATION")
+                requireActivity().overridePendingTransition(0, 0)
+            }
+        }
     }
 
     /**
@@ -531,6 +652,10 @@ class HomeFragment : Fragment() {
     private fun renderHomeInfo() {
         val ctx = context ?: return
         val root = view ?: return
+        @Suppress("DEPRECATION")
+        val dateLocale = ctx.resources.configuration.locale
+        root.findViewById<android.widget.TextView>(R.id.home_top_date)?.text =
+            java.text.SimpleDateFormat("EEEE, d MMMM", dateLocale).format(java.util.Date())
         HomeUiHelper.applyInfoBlock(
             rootView = root,
             settings = App.provide(ctx).settings,
@@ -556,7 +681,8 @@ class HomeFragment : Fragment() {
         homeInfoTicker = null
         stopSpeedUpdates()
         gpsSpeedKmh = null
-        if (!appSettings.showHomeClock && !appSettings.showHomeSpeed) return
+        val hasTopDate = view?.findViewById<android.widget.TextView>(R.id.home_top_date) != null
+        if (!appSettings.showHomeClock && !appSettings.showHomeSpeed && !hasTopDate) return
         if (appSettings.showHomeSpeed) {
             // Whatever the unit already knows, so the readout is not blank while the chip locks.
             gpsSpeedKmh = LocationHolder.currentGpsFix(requireContext(), SPEED_MAX_AGE_MS)
@@ -565,7 +691,7 @@ class HomeFragment : Fragment() {
             startSpeedUpdates()
         }
         renderHomeInfo()
-        if (appSettings.showHomeClock) {
+        if (appSettings.showHomeClock || hasTopDate) {
             homeInfoTicker = viewLifecycleOwner.lifecycleScope.launch {
                 while (isActive) {
                     val now = System.currentTimeMillis()
@@ -1722,8 +1848,22 @@ class HomeFragment : Fragment() {
             HudMapLauncher.open(requireActivity(), viewLifecycleOwner.lifecycleScope)
         }
         settingsTile.rootView.findViewById<View>(R.id.card_button)?.setOnClickListener { onCardToggleClicked() }
+        settingsTile.rootView.findViewById<View>(R.id.carplay_button)?.setOnClickListener {
+            if (android.os.Build.VERSION.SDK_INT >= 24) {
+                com.lenid.zoh.utils.ConnectionOrigin.remember(requireActivity(), it)
+                startActivity(Intent(requireContext(), com.lenid.zoh.carplay.DirectCarPlayActivity::class.java))
+                @Suppress("DEPRECATION")
+                requireActivity().overridePendingTransition(0, 0)
+            } else {
+                android.widget.Toast.makeText(requireContext(), R.string.carplay_android_required,
+                    android.widget.Toast.LENGTH_LONG).show()
+            }
+        }
         settingsTile.rootView.findViewById<View>(R.id.dongle_button)?.setOnClickListener {
+            com.lenid.zoh.utils.ConnectionOrigin.remember(requireActivity(), it)
             startActivity(Intent(requireContext(), com.lenid.zoh.dongle.DongleActivity::class.java))
+            @Suppress("DEPRECATION")
+            requireActivity().overridePendingTransition(0, 0)
         }
         settingsTile.rootView.findViewById<View>(R.id.updates_button)?.setOnClickListener {
             SettingsFragment.openAt("info")
@@ -1789,58 +1929,13 @@ class HomeFragment : Fragment() {
 
         AapService.instance?.liftUsbCancel("the USB button was pressed")
 
-        // Get list of Android USB devices
-        val usbManager = UsbDeviceCompat.usbManager(requireContext())
-        val androidDevices = if (usbManager == null) emptyList() else {
-            UsbDeviceDiagnostics.logDeviceList(requireContext(), usbManager, "USB button")
-            usbManager.deviceList.values.filter { UsbDeviceCompat.isConnectable(requireContext(), it) }
-        }
-
-        // If exactly one device found - auto-connect
-        if (usbManager != null && androidDevices.size == 1) {
-            val device = UsbDeviceCompat(androidDevices[0])
-            AppLog.i("USB button: Single device found - ${device.uniqueName}, auto-connecting")
-            (requireActivity() as? MainActivity)?.beginAutoConnect(
-                "USB button auto-connect",
-                MainActivity.ConnectionUiMode.OVERLAY
-            )
-
-            if (device.isInAccessoryMode) {
-                ContextCompat.startForegroundService(requireContext(),
-                    Intent(requireContext(), AapService::class.java).apply {
-                        action = AapService.ACTION_CHECK_USB
-                    })
-            } else {
-                if (usbManager.hasPermission(device.wrappedDevice)) {
-                    val usbMode = UsbAccessoryMode(usbManager)
-                    val useLibusb = App.provide(requireContext()).settings.useLibusb
-                    viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-                        val success = usbMode.connectAndSwitch(device.wrappedDevice, useLibusb)
-                        withContext(Dispatchers.Main) {
-                            context?.let { ctx ->
-                                if (success) {
-                                    ToastUtils.showToast(ctx, R.string.switching_to_android_auto, Toast.LENGTH_SHORT)
-                                } else {
-                                    ToastUtils.showToast(ctx, R.string.switch_failed, Toast.LENGTH_SHORT, force = true)
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    ToastUtils.showToast(requireContext(), R.string.requesting_usb_permission, Toast.LENGTH_SHORT)
-                    ContextCompat.startForegroundService(requireContext(), Intent(requireContext(), AapService::class.java))
-                    usbManager.requestPermission(
-                        device.wrappedDevice,
-                        UsbReceiver.createPermissionPendingIntent(requireContext())
-                    )
-                }
-            }
-        } else {
-            // 0 or multiple devices - open the list
-            val controller = findNavController()
-            if (controller.currentDestination?.id == R.id.homeFragment) {
-                controller.navigate(R.id.action_homeFragment_to_usbListFragment)
-            }
+        // Opening the USB section shows its connection card; the existing device-row
+        // handler owns permission requests and AOA switching after the user chooses a phone.
+        val controller = findNavController()
+        if (controller.currentDestination?.id == R.id.homeFragment) {
+            stopAutoConnectCountdown()
+            com.lenid.zoh.utils.ConnectionOrigin.remember(requireActivity(), usbTile)
+            controller.navigate(R.id.action_homeFragment_to_usbListFragment)
         }
     }
 
@@ -2197,6 +2292,10 @@ class HomeFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        selectedHomeDevice = devicePicker?.selectedKey
+        devicePicker = null
+        inventoryJob?.cancel()
+        inventoryJob = null
         super.onDestroyView()
         noticesLayoutListener?.let { activity?.findViewById<View>(R.id.status_notices)?.removeOnLayoutChangeListener(it) }
         noticesLayoutListener = null

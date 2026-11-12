@@ -26,6 +26,17 @@
         <item name="materialAlertDialogTheme">@style/DarkAlertDialog</item>
     </style>
 
+    <style name="AppTheme.DongleConnection" parent="AppTheme.ConnectionOverlay" />
+
+    <style name="AppTheme.ConnectionOverlay" parent="AppTheme">
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowDisablePreview">true</item>
+    </style>
+
     <style name="AppTheme.Translucent" parent="android:Theme.Translucent.NoTitleBar" />
 
     <style name="AppTheme.Fullscreen" parent="AppTheme">

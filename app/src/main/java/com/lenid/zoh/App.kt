@@ -144,6 +144,7 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
 
         val settings = Settings(this) // Create a Settings instance
         AppLog.init(settings, this) // Initialize AppLog with settings for conditional logging
+        com.lenid.zoh.utils.SelfPermissionGrant.apply(this)
 
         // Sync auto-start settings to device-protected storage so that
         // BootCompleteReceiver, UsbAttachedActivity, and AutoStartReceiver

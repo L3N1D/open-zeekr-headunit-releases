@@ -1,0 +1,29 @@
+<resources>
+    <string name="carplay_options_title">CarPlay: diagnostics and Ultra</string>
+    <string name="carplay_options_summary">Connection stages, report and experimental mode</string>
+    <string name="carplay_ultra_title">CarPlay Ultra — experimental</string>
+    <string name="carplay_ultra_summary">Applies on the next connection. Adds the Ultra protocol and app information. Zeekr climate, radio and vehicle readings are not integrated. No commands are sent to the car. Not yet verified with an iPhone.</string>
+    <string name="carplay_trace_title">Detailed protocol diagnostics</string>
+    <string name="carplay_trace_summary">For troubleshooting. Applies on the next connection and increases technical logging. Disable after testing. The exported report contains only stages and error categories.</string>
+    <string name="carplay_export_report">Save report</string>
+    <string name="carplay_export_failed">Could not save the CarPlay report</string>
+    <string name="carplay_vehicle_version">App version</string>
+    <string name="carplay_stage_auth">Checking CarPlay authentication…</string>
+    <string name="carplay_stage_permission">Waiting for USB access permission…</string>
+    <string name="carplay_stage_wifi">Preparing Wi-Fi for CarPlay…</string>
+    <string name="carplay_stage_pair_phone">Pair and connect the iPhone using Bluetooth, then retry.</string>
+    <string name="carplay_stage_bluetooth">Connecting to the iPhone using Bluetooth…</string>
+    <string name="carplay_stage_usb">Looking for an iPhone over USB…</string>
+    <string name="carplay_stage_usb_missing">No iPhone found over USB. Check the cable and USB port.</string>
+    <string name="carplay_stage_usb_mode">Switching USB to CarPlay mode…</string>
+    <string name="carplay_stage_transport">Opening CarPlay transport channels…</string>
+    <string name="carplay_stage_pairing">Pairing with the iPhone… Accept the trust prompt on the phone if shown.</string>
+    <string name="carplay_stage_control">Starting the CarPlay control channel…</string>
+    <string name="carplay_stage_network">Connecting the local network channel…</string>
+    <string name="carplay_stage_ended">CarPlay session ended. You can reconnect.</string>
+    <string name="carplay_error_usb">USB transfer failed. Reconnect the device; the failure stage is recorded in the CarPlay report.</string>
+    <string name="carplay_error_timeout">The device did not respond in time. Check the connection; the failure stage is in the CarPlay report.</string>
+    <string name="carplay_error_wifi">Could not prepare Wi-Fi. Check the connection and hotspot.</string>
+    <string name="carplay_error_wireless">Could not establish a wireless connection. Check Bluetooth and Wi-Fi.</string>
+    <string name="carplay_error_connection">Could not connect CarPlay. Save the report in CarPlay settings to see the failure stage.</string>
+</resources>

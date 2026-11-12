@@ -101,3 +101,9 @@ key.properties
 
 # Separate local application; not published with Open Headunit
 /zkoptimizer/
+
+# Local CarPlay identities and Python caches
+**/local-auth/
+**/offline-mfi/
+__pycache__/
+*.pyc

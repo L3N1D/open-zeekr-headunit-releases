@@ -26,6 +26,13 @@
         android:paddingEnd="4dp"
         android:paddingBottom="8dp">
 
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="12dp"
+            android:src="@mipmap/ic_launcher"
+            android:contentDescription="@string/app_name" />
+
         <TextClock
             android:id="@+id/home_top_clock"
             android:layout_width="wrap_content"
@@ -36,15 +43,13 @@
             android:textSize="@dimen/home_top_clock"
             android:textStyle="bold" />
 
-        <TextClock
+        <TextView
             android:id="@+id/home_top_date"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_weight="1"
             android:ellipsize="end"
-            android:format12Hour="EEEE, d MMMM"
-            android:format24Hour="EEEE, d MMMM"
             android:maxLines="1"
             android:textColor="@color/home_text_muted"
             android:textSize="@dimen/home_top_date" />
@@ -144,6 +149,11 @@
                         android:text="@string/wifi" />
                 </LinearLayout>
 
+
+        <LinearLayout android:id="@+id/carplay_button" style="@style/HomeTile.Grid" >
+            <ImageView style="@style/HomeTileIcon.Grid" app:srcCompat="@drawable/ic_carplay" />
+            <com.lenid.zoh.view.WordFitTextView style="@style/HomeTileLabel.Grid" android:text="@string/home_carplay" />
+        </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/dongle_button"

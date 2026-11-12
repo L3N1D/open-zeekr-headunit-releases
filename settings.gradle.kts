@@ -1,7 +1,7 @@
 import org.gradle.kotlin.dsl.maven
 import org.gradle.kotlin.dsl.repositories
 
-include(":app", ":contract", ":carlink")
+include(":app", ":contract", ":carlink", ":carplay")
 
 
 rootProject.name = "open-headunit"

@@ -241,7 +241,7 @@
         android:name="com.lenid.zoh.main.LoadingScreenFragment"
         android:label="@string/loading_screen" />
 
-    <fragment
+    <dialog
         android:id="@+id/usbListFragment"
         android:name="com.lenid.zoh.main.UsbListFragment"
         android:label="@string/usb" />

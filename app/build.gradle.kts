@@ -93,10 +93,11 @@ android {
         applicationId = "com.lenid.zoh"
         minSdk = 16
         targetSdk = 36
-        versionCode = 125
-        versionName = "1.0.3"
+        versionCode = 126
+        versionName = "1.0.4"
         setProperty("archivesBaseName", "${applicationId}_${versionName}")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        resourceConfigurations += listOf("en", "ru")
         multiDexEnabled = true
         vectorDrawables.useSupportLibrary = true
 
@@ -285,6 +286,7 @@ dependencies {
     testImplementation("org.mockito:mockito-core:5.14.2")
 
     implementation(project(":contract"))
+    implementation(project(":carplay"))
 
     // Multidex
     implementation("androidx.multidex:multidex:2.0.1")

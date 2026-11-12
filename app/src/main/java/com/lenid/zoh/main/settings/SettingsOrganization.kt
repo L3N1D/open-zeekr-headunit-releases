@@ -25,7 +25,7 @@ internal object SettingsOrganization {
             }
             if (item.stableId == "bottomSaveButton") { trailing.add(item); continue }
             val target = when {
-                item.stableId in setOf("connectionMode", "useLibusb") -> "connection"
+                item.stableId in setOf("connectionMode", "useLibusb", "carPlayOptions") -> "connection"
                 item.stableId in setOf("vehicleInfoSettings", "hudMirroring") -> "moreFeatures"
                 item.stableId == "enableFloatingButton" || item.stableId.startsWith("floatingButton") -> "theming"
                 else -> category

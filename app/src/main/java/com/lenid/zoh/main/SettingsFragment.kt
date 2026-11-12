@@ -9,7 +9,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings as SystemSettings
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -56,6 +55,7 @@ import com.lenid.zoh.decoder.audio.PlaybackFocusPolicy
 import com.lenid.zoh.decoder.video.VideoFaultInjector
 import com.lenid.zoh.decoder.video.DeviceMemoryProfile
 import com.lenid.zoh.main.settings.SettingItem
+import com.lenid.zoh.main.settings.SettingsDialogs
 import com.lenid.zoh.main.settings.SettingsAdapter
 import com.lenid.zoh.utils.AppLog
 import com.lenid.zoh.utils.AppPermissions
@@ -301,6 +301,22 @@ class SettingsFragment : Fragment() {
         }
     }
 
+    private val carPlayReportLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+        if (uri != null) {
+            val context = context ?: return@registerForActivityResult
+            val report = com.lenid.zoh.carplay.CarPlayDiagnostics.report()
+            lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                runCatching {
+                    requireNotNull(context.contentResolver.openOutputStream(uri)).bufferedWriter().use { it.write(report) }
+                }.onFailure {
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        android.widget.Toast.makeText(context, R.string.carplay_export_failed, android.widget.Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
+    }
+
     private val exportSettingsLauncher = registerForActivityResult(
         ActivityResultContracts.CreateDocument(SettingsBackupManager.MIME_TYPE)
     ) { uri ->
@@ -381,6 +397,18 @@ class SettingsFragment : Fragment() {
         savedInstanceState?.getParcelable<android.os.Parcelable>("recycler_scroll")?.let {
             settingsRecyclerView.layoutManager?.onRestoreInstanceState(it)
         }
+    }
+
+    override fun onDestroyView() {
+        // Cached cards belong to this view hierarchy, not to the retained fragment.
+        // Returning from a child screen must populate the newly inflated navigation column.
+        categoryCards.clear()
+        categoryIndicator?.animate()?.cancel()
+        categoryNav = null
+        categoryIndicator = null
+        searchInput = null
+        settingsTabGroup = null
+        super.onDestroyView()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -675,8 +703,27 @@ class SettingsFragment : Fragment() {
     }
 
     /** Reads a fault budget for the settings row, so 0 says what it means rather than showing "0". */
+    private fun settingsEnumLabel(name: String): String = when (name) {
+        "CONSTRAINED" -> getString(R.string.settings_enum_constrained)
+        "NORMAL" -> getString(R.string.settings_enum_normal)
+        "AMPLE" -> getString(R.string.settings_enum_ample)
+        "OFF" -> getString(R.string.settings_enum_off)
+        "DROP_FIRST_FRAGMENT" -> getString(R.string.settings_enum_drop_first_fragment)
+        "DROP_MIDDLE_FRAGMENT" -> getString(R.string.settings_enum_drop_middle_fragment)
+        "DROP_LAST_FRAGMENT" -> getString(R.string.settings_enum_drop_last_fragment)
+        "HIDE_START_CODE" -> getString(R.string.settings_enum_hide_start_code)
+        "DROP_MIDDLE_FRAGMENT_IN_READER" -> getString(R.string.settings_enum_drop_middle_fragment_in_reader)
+        "VERBOSE" -> getString(R.string.settings_enum_verbose)
+        "DEBUG" -> getString(R.string.settings_enum_debug)
+        "INFO" -> getString(R.string.settings_enum_info)
+        "WARNING" -> getString(R.string.settings_enum_warning)
+        "ERROR" -> getString(R.string.settings_enum_error)
+        "SILENT" -> getString(R.string.settings_enum_silent)
+        else -> name.lowercase().replaceFirstChar { it.uppercase() }
+    }
+
     private fun describeFaultBudget(budget: Int): String =
-        if (budget == VideoFaultInjector.UNLIMITED_BUDGET) "Whole session" else "$budget faults"
+        if (budget == VideoFaultInjector.UNLIMITED_BUDGET) getString(R.string.settings_label_3) else getString(R.string.settings_fault_count, budget)
 
     private fun updateSettingsList() {
         val app = App.provide(requireContext())
@@ -721,7 +768,7 @@ class SettingsFragment : Fragment() {
 
         // Language Selector
         val availableLocales = LocaleHelper.getAvailableLocales(requireContext())
-        val currentLocale = LocaleHelper.stringToLocale(pendingAppLanguage ?: "")
+        val currentLocale = LocaleHelper.stringToLocale(pendingAppLanguage ?: settings.appLanguage)
         val currentLanguageDisplay = if (currentLocale != null) {
             LocaleHelper.getDisplayName(currentLocale)
         } else {
@@ -733,25 +780,24 @@ class SettingsFragment : Fragment() {
             nameResId = R.string.app_language,
             value = currentLanguageDisplay,
             onClick = { _ ->
-                val languageNames = mutableListOf(getString(R.string.system_default))
-                val localeCodes = mutableListOf("")
+                val languageNames = mutableListOf<String>()
+                val localeCodes = mutableListOf<String>()
 
                 availableLocales.forEach { locale ->
                     languageNames.add(LocaleHelper.getDisplayName(locale))
                     localeCodes.add(LocaleHelper.localeToString(locale))
                 }
 
-                val currentIndex = localeCodes.indexOf(pendingAppLanguage ?: "").coerceAtLeast(0)
+                val currentIndex = localeCodes.indexOf(pendingAppLanguage ?: settings.appLanguage).coerceAtLeast(0)
 
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.change_language)
-                    .setSingleChoiceItems(languageNames.toTypedArray(), currentIndex) { dialog, which ->
-                        pendingAppLanguage = localeCodes[which]
-                        checkChanges()
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
+                SettingsDialogs.showSingleChoice(
+                    requireContext(), R.string.change_language, languageNames.toTypedArray(), currentIndex
+                ) { dialog, which ->
+                    pendingAppLanguage = localeCodes[which]
+                    checkChanges()
+                    dialog.dismiss()
+                    updateSettingsList()
+                }
             }
         ))
 
@@ -894,22 +940,20 @@ class SettingsFragment : Fragment() {
                         val options = mutableListOf<Pair<String, String>>()
                         options.add("" to getString(R.string.driver_none))
                         likelyPhones.forEach { dev ->
-                            val name = dev.name ?: "Unknown"
+                            val name = dev.name ?: getString(R.string.settings_label_0)
                             options.add(dev.address to "$name (${dev.address})")
                         }
                         val labels = options.map { it.second }.toTypedArray()
                         val selectedIdx = options.indexOfFirst { it.first.equals(currentPrefMac, ignoreCase = true) }.coerceAtLeast(0)
 
-                        MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                            .setTitle(R.string.native_driver_preferred_device)
-                            .setSingleChoiceItems(labels, selectedIdx) { dialog, which ->
-                                dialog.dismiss()
-                                pendingNativePreferredDeviceMac = options[which].first
-                                checkChanges()
-                                updateSettingsList()
-                            }
-                            .setNegativeButton(R.string.cancel, null)
-                            .show()
+                        SettingsDialogs.showSingleChoice(
+                            requireContext(), R.string.native_driver_preferred_device, labels, selectedIdx, cancelLabel = R.string.cancel
+                        ) { dialog, which ->
+                            dialog.dismiss()
+                            pendingNativePreferredDeviceMac = options[which].first
+                            checkChanges()
+                            updateSettingsList()
+                        }
                     }
                 ))
             }
@@ -927,15 +971,14 @@ class SettingsFragment : Fragment() {
 
                     val selectedIndex = serviceNames.indexOf(currentServiceName).coerceAtLeast(0)
 
-                    MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                        .setTitle(R.string.select_bt_adapter)
-                        .setSingleChoiceItems(displayNames, selectedIndex) { dialog, which ->
-                            dialog.dismiss()
-                            pendingBluetoothManagerServiceName = serviceNames[which]
-                            checkChanges()
-                            updateSettingsList()
-                        }
-                        .show()
+                    SettingsDialogs.showSingleChoice(
+                        requireContext(), R.string.select_bt_adapter, displayNames, selectedIndex
+                    ) { dialog, which ->
+                        dialog.dismiss()
+                        pendingBluetoothManagerServiceName = serviceNames[which]
+                        checkChanges()
+                        updateSettingsList()
+                    }
                 }
             ))
 
@@ -1184,6 +1227,16 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.CategoryHeader("moreFeatures", R.string.category_more_features))
 
         items.add(SettingItem.SettingEntry(
+            stableId = "carPlayOptions",
+            nameResId = R.string.carplay_options_title,
+            value = getString(R.string.carplay_options_summary),
+            searchKeywords = "carplay ultra trace diagnostics report",
+            onClick = { com.lenid.zoh.carplay.CarPlayOptionsDialog.show(requireContext()) {
+                carPlayReportLauncher.launch("carplay-diagnostics.txt")
+            } }
+        ))
+
+        items.add(SettingItem.SettingEntry(
             stableId = "deviceSpecificSettings",
             nameResId = R.string.device_specific_settings,
             value = getString(R.string.device_specific_settings_description),
@@ -1343,15 +1396,14 @@ class SettingsFragment : Fragment() {
                 value = exitActions.getOrElse(currentExitActionIdx) { exitActions[0] },
                 searchKeywords = getString(R.string.pref_aa_exit_action_summary),
                 onClick = { _ ->
-                    MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                        .setTitle(R.string.pref_aa_exit_action_title)
-                        .setSingleChoiceItems(exitActions, currentExitActionIdx) { dialog, which ->
-                            Settings.ExitAction.fromInt(which)?.let { pendingAaExitAction = it }
-                            checkChanges()
-                            dialog.dismiss()
-                            updateSettingsList()
-                        }
-                        .show()
+                    SettingsDialogs.showSingleChoice(
+                        requireContext(), R.string.pref_aa_exit_action_title, exitActions, currentExitActionIdx
+                    ) { dialog, which ->
+                        Settings.ExitAction.fromInt(which)?.let { pendingAaExitAction = it }
+                        checkChanges()
+                        dialog.dismiss()
+                        updateSettingsList()
+                    }
                 }
             ))
         }
@@ -1476,7 +1528,8 @@ class SettingsFragment : Fragment() {
             nameResId = R.string.pixel_aspect_ratio,
             value = if ((pendingPixelAspectRatioE4 ?: 10000) <= 0) "10000" else pendingPixelAspectRatioE4.toString(),
             onClick = { _ ->
-                showNumericInputDialog(
+                SettingsDialogs.showNumericInputDialog(
+                    context = requireContext(),
                     title = getString(R.string.enter_pixel_aspect_ratio_value),
                     message = null,
                     initialValue = if ((pendingPixelAspectRatioE4 ?: 10000) <= 0) 10000 else (pendingPixelAspectRatioE4 ?: 10000),
@@ -1515,25 +1568,23 @@ class SettingsFragment : Fragment() {
                     getString(R.string.fullscreen_status_only),
                     getString(R.string.fullscreen_immersive_avoid_notch)
                 )
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.start_in_fullscreen_mode)
-                    .setSingleChoiceItems(modes, pendingFullscreenMode?.value ?: 0) { dialog, which ->
-                        val newMode = Settings.FullscreenMode.fromInt(which) ?: Settings.FullscreenMode.NONE
-                        pendingFullscreenMode = newMode
+                SettingsDialogs.showSingleChoice(
+                    requireContext(), R.string.start_in_fullscreen_mode, modes, pendingFullscreenMode?.value ?: 0, cancelLabel = R.string.cancel
+                ) { dialog, which ->
+                    val newMode = Settings.FullscreenMode.fromInt(which) ?: Settings.FullscreenMode.NONE
+                    pendingFullscreenMode = newMode
 
-                        // PERSIST IMMEDIATELY (Rescue Mode)
-                        settings.fullscreenMode = newMode
-                        settings.commit()
+                    // PERSIST IMMEDIATELY (Rescue Mode)
+                    settings.fullscreenMode = newMode
+                    settings.commit()
 
-                        checkChanges()
-                        dialog.dismiss()
-                        updateSettingsList()
+                    checkChanges()
+                    dialog.dismiss()
+                    updateSettingsList()
 
-                        // Apply immediately to current UI
-                        requireActivity().recreate()
-                    }
-                    .setNegativeButton(R.string.cancel, null)
-                    .show()
+                    // Apply immediately to current UI
+                    requireActivity().recreate()
+                }
             }
         ))
 
@@ -1550,15 +1601,14 @@ class SettingsFragment : Fragment() {
             onClick = { _ ->
                 val viewModes = arrayOf(getString(R.string.surface_view), getString(R.string.texture_view), getString(R.string.gles_view))
                 val currentIdx = pendingViewMode?.value ?: settings.viewMode.value
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.change_view_mode)
-                    .setSingleChoiceItems(viewModes, currentIdx) { dialog, which ->
-                        Settings.ViewMode.fromInt(which)?.let { pendingViewMode = it }
-                        checkChanges()
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
+                SettingsDialogs.showSingleChoice(
+                    requireContext(), R.string.change_view_mode, viewModes, currentIdx
+                ) { dialog, which ->
+                    Settings.ViewMode.fromInt(which)?.let { pendingViewMode = it }
+                    checkChanges()
+                    dialog.dismiss()
+                    updateSettingsList()
+                }
             }
         ))
 
@@ -1571,26 +1621,25 @@ class SettingsFragment : Fragment() {
             searchKeywords = orientationOptions.joinToString(" "),
             onClick = { _ ->
                 val currentIdx = pendingScreenOrientation?.value ?: settings.screenOrientation.value
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.change_screen_orientation)
-                    .setSingleChoiceItems(orientationOptions, currentIdx) { dialog, whiches ->
-                        val newOrientation = Settings.ScreenOrientation.fromInt(whiches) ?: Settings.ScreenOrientation.SYSTEM
-                        pendingScreenOrientation = newOrientation
+                SettingsDialogs.showSingleChoice(
+                    requireContext(), R.string.change_screen_orientation, orientationOptions, currentIdx
+                ) { dialog, whiches ->
+                    val newOrientation = Settings.ScreenOrientation.fromInt(whiches) ?: Settings.ScreenOrientation.SYSTEM
+                    pendingScreenOrientation = newOrientation
 
-                        // Apply immediately
-                        settings.screenOrientation = newOrientation
-                        settings.commit()
+                    // Apply immediately
+                    settings.screenOrientation = newOrientation
+                    settings.commit()
 
-                        requireActivity().requestedOrientation = newOrientation.androidOrientation
-                        requireContext().sendBroadcast(Intent(AapService.ACTION_ORIENTATION_CHANGED).apply {
-                            setPackage(requireContext().packageName)
-                        })
+                    requireActivity().requestedOrientation = newOrientation.androidOrientation
+                    requireContext().sendBroadcast(Intent(AapService.ACTION_ORIENTATION_CHANGED).apply {
+                        setPackage(requireContext().packageName)
+                    })
 
-                        checkChanges()
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
+                    checkChanges()
+                    dialog.dismiss()
+                    updateSettingsList()
+                }
             }
         ))
 
@@ -1603,15 +1652,14 @@ class SettingsFragment : Fragment() {
             onClick = { _ ->
                 val fitOptions = resources.getStringArray(R.array.video_fit_mode)
                 val currentIdx = (pendingVideoFitMode ?: settings.videoFitMode).value
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.change_video_fit_mode)
-                    .setSingleChoiceItems(fitOptions, currentIdx) { dialog, which ->
-                        pendingVideoFitMode = Settings.VideoFitMode.fromInt(which) ?: Settings.VideoFitMode.FILL
-                        checkChanges()
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
+                SettingsDialogs.showSingleChoice(
+                    requireContext(), R.string.change_video_fit_mode, fitOptions, currentIdx
+                ) { dialog, which ->
+                    pendingVideoFitMode = Settings.VideoFitMode.fromInt(which) ?: Settings.VideoFitMode.FILL
+                    checkChanges()
+                    dialog.dismiss()
+                    updateSettingsList()
+                }
             }
         ))
 
@@ -1722,15 +1770,14 @@ class SettingsFragment : Fragment() {
                         Settings.SoftwareVideoDecoder.DEVICE_MEDIACODEC
                     )
                     val currentDecoderIndex = decoderValues.indexOf(pendingSoftwareVideoDecoder).coerceAtLeast(0)
-                    MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                        .setTitle(R.string.software_video_decoder)
-                        .setSingleChoiceItems(decoders, currentDecoderIndex) { dialog, which ->
-                            pendingSoftwareVideoDecoder = decoderValues[which]
-                            checkChanges()
-                            dialog.dismiss()
-                            updateSettingsList()
-                        }
-                        .show()
+                    SettingsDialogs.showSingleChoice(
+                        requireContext(), R.string.software_video_decoder, decoders, currentDecoderIndex
+                    ) { dialog, which ->
+                        pendingSoftwareVideoDecoder = decoderValues[which]
+                        checkChanges()
+                        dialog.dismiss()
+                        updateSettingsList()
+                    }
                 }
             ))
         }
@@ -1743,15 +1790,14 @@ class SettingsFragment : Fragment() {
             onClick = { _ ->
                 val codecs = arrayOf("Auto", "H.264", "H.265")
                 val currentCodecIndex = codecs.indexOf(pendingVideoCodec)
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.video_codec)
-                    .setSingleChoiceItems(codecs, currentCodecIndex) { dialog, which ->
-                        pendingVideoCodec = codecs[which]
-                        checkChanges()
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
+                SettingsDialogs.showSingleChoice(
+                    requireContext(), R.string.video_codec, codecs, currentCodecIndex
+                ) { dialog, which ->
+                    pendingVideoCodec = codecs[which]
+                    checkChanges()
+                    dialog.dismiss()
+                    updateSettingsList()
+                }
             }
         ))
 
@@ -1762,15 +1808,14 @@ class SettingsFragment : Fragment() {
             onClick = { _ ->
                 val fpsOptions = arrayOf("30", "60")
                 val currentFpsIndex = fpsOptions.indexOf(pendingFpsLimit.toString())
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.fps_limit)
-                    .setSingleChoiceItems(fpsOptions, currentFpsIndex) { dialog, which ->
-                        pendingFpsLimit = fpsOptions[which].toInt()
-                        checkChanges()
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
+                SettingsDialogs.showSingleChoice(
+                    requireContext(), R.string.fps_limit, fpsOptions, currentFpsIndex
+                ) { dialog, which ->
+                    pendingFpsLimit = fpsOptions[which].toInt()
+                    checkChanges()
+                    dialog.dismiss()
+                    updateSettingsList()
+                }
             }
         ))
 
@@ -2025,19 +2070,18 @@ class SettingsFragment : Fragment() {
                 value = targets[current],
                 searchKeywords = "zeekr gmc widget music media center " + getString(R.string.media_widget_target_description),
                 onClick = { _ ->
-                    MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                        .setTitle(R.string.media_widget_target)
-                        .setSingleChoiceItems(targets, current) { dialog, which ->
-                            settings.mediaWidgetTarget = which
-                            // GMC reads the track from the media session.
-                            if (which == Settings.MEDIA_WIDGET_GMC && !settings.syncMediaSessionWithAaMetadata) {
-                                settings.syncMediaSessionWithAaMetadata = true
-                                pendingSyncMediaSessionAaMetadata = true
-                            }
-                            dialog.dismiss()
-                            updateSettingsList()
+                    SettingsDialogs.showSingleChoice(
+                        requireContext(), R.string.media_widget_target, targets, current
+                    ) { dialog, which ->
+                        settings.mediaWidgetTarget = which
+                        // GMC reads the track from the media session.
+                        if (which == Settings.MEDIA_WIDGET_GMC && !settings.syncMediaSessionWithAaMetadata) {
+                            settings.syncMediaSessionWithAaMetadata = true
+                            pendingSyncMediaSessionAaMetadata = true
                         }
-                        .show()
+                        dialog.dismiss()
+                        updateSettingsList()
+                    }
                 }
             ))
         }
@@ -2079,40 +2123,38 @@ class SettingsFragment : Fragment() {
             value = "${pendingAudioLatencyMultiplier}x",
             onClick = { _ ->
                 val options = arrayOf(
-                    "1x (lowest latency)", "2x (low latency)", "4x (medium)",
-                    "8x (deep)", "16x (deepest, default)"
+                    getString(R.string.settings_label_9), getString(R.string.settings_label_10), getString(R.string.settings_label_11),
+                    getString(R.string.settings_label_12), getString(R.string.settings_label_13)
                 )
                 val values = intArrayOf(1, 2, 4, 8, 16)
                 val currentIndex = values.indexOf(pendingAudioLatencyMultiplier ?: com.lenid.zoh.decoder.audio.AudioJitterBufferPolicy.DEFAULT_MULTIPLIER).coerceAtLeast(0)
-                AlertDialog.Builder(requireContext())
-                    .setTitle(R.string.audio_latency_multiplier)
-                    .setSingleChoiceItems(options, currentIndex) { dialog, which ->
-                        pendingAudioLatencyMultiplier = values[which]
-                        checkChanges()
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
+                SettingsDialogs.showPlatformSingleChoice(
+                    requireContext(), R.string.audio_latency_multiplier, options, currentIndex
+                ) { dialog, which ->
+                    pendingAudioLatencyMultiplier = values[which]
+                    checkChanges()
+                    dialog.dismiss()
+                    updateSettingsList()
+                }
             }
         ))
 
         items.add(SettingItem.SettingEntry(
             stableId = "audioQueueCapacity",
             nameResId = R.string.audio_queue_capacity,
-            value = if (pendingAudioQueueCapacity == 0) "Unbounded (Legacy)" else "${pendingAudioQueueCapacity} chunks",
+            value = if (pendingAudioQueueCapacity == 0) getString(R.string.settings_label_4) else getString(R.string.settings_queue_chunks, pendingAudioQueueCapacity),
             onClick = { _ ->
-                val options = arrayOf("10 chunks (Low Latency)", "20 chunks (Balanced)", "50 chunks (High Latency)", "Unbounded (Max Backlog)")
+                val options = arrayOf(getString(R.string.settings_label_5), getString(R.string.settings_label_6), getString(R.string.settings_label_7), getString(R.string.settings_label_8))
                 val values = intArrayOf(10, 20, 50, 0)
                 val currentIndex = values.indexOf(pendingAudioQueueCapacity ?: 0).coerceAtLeast(0)
-                AlertDialog.Builder(requireContext())
-                    .setTitle(R.string.audio_queue_capacity)
-                    .setSingleChoiceItems(options, currentIndex) { dialog, which ->
-                        pendingAudioQueueCapacity = values[which]
-                        checkChanges()
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                .show()
+                SettingsDialogs.showPlatformSingleChoice(
+                    requireContext(), R.string.audio_queue_capacity, options, currentIndex
+                ) { dialog, which ->
+                    pendingAudioQueueCapacity = values[which]
+                    checkChanges()
+                    dialog.dismiss()
+                    updateSettingsList()
+                }
             }
         ))
 
@@ -2217,8 +2259,8 @@ class SettingsFragment : Fragment() {
         // Lets a well-provisioned rig run the constrained video pipeline, which is otherwise only
         // reachable on 1GB hardware we do not have. Applies on the next connection; the configure
         // line reports the profile and marks it FORCED.
-        val memoryProfileNames = listOf("Measure") +
-            DeviceMemoryProfile.entries.map { it.name.lowercase().replaceFirstChar { c -> c.uppercase() } }
+        val memoryProfileNames = listOf(getString(R.string.settings_label_1)) +
+            DeviceMemoryProfile.entries.map { settingsEnumLabel(it.name) }
         val memoryProfileValues = listOf<DeviceMemoryProfile?>(null) + DeviceMemoryProfile.entries
         items.add(SettingItem.SettingEntry(
             stableId = "debugForceMemoryProfile",
@@ -2227,14 +2269,13 @@ class SettingsFragment : Fragment() {
             searchKeywords = "memory profile low ram constrained buffers queue",
             onClick = {
                 val currentIndex = memoryProfileValues.indexOf(settings.debugForceMemoryProfile).coerceAtLeast(0)
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.debug_force_memory_profile)
-                    .setSingleChoiceItems(memoryProfileNames.toTypedArray(), currentIndex) { dialog, which ->
-                        settings.debugForceMemoryProfile = memoryProfileValues[which]
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
+                SettingsDialogs.showSingleChoice(
+                    requireContext(), R.string.debug_force_memory_profile, memoryProfileNames.toTypedArray(), currentIndex
+                ) { dialog, which ->
+                    settings.debugForceMemoryProfile = memoryProfileValues[which]
+                    dialog.dismiss()
+                    updateSettingsList()
+                }
             }
         ))
 
@@ -2244,23 +2285,22 @@ class SettingsFragment : Fragment() {
         // the hold loudly at start. A tool, not a preference, so applied immediately.
         val feedHolds = listOf(0, 10, 25, 40, 100)
         val feedHoldNames = feedHolds
-            .map { if (it == 0) "Off" else "${it}ms per frame" }
+            .map { if (it == 0) getString(R.string.settings_label_2) else getString(R.string.settings_frame_ms, it) }
             .toTypedArray()
         items.add(SettingItem.SettingEntry(
             stableId = "debugVideoFeedHold",
             nameResId = R.string.debug_video_feed_hold,
-            value = if (settings.debugVideoFeedHoldMs == 0) "Off" else "${settings.debugVideoFeedHoldMs}ms per frame",
+            value = if (settings.debugVideoFeedHoldMs == 0) getString(R.string.settings_label_2) else getString(R.string.settings_frame_ms, settings.debugVideoFeedHoldMs),
             searchKeywords = "slow decoder feed hold backpressure pacing test",
             onClick = {
                 val currentIndex = feedHolds.indexOf(settings.debugVideoFeedHoldMs).coerceAtLeast(0)
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.debug_video_feed_hold)
-                    .setSingleChoiceItems(feedHoldNames, currentIndex) { dialog, which ->
-                        settings.debugVideoFeedHoldMs = feedHolds[which]
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
+                SettingsDialogs.showSingleChoice(
+                    requireContext(), R.string.debug_video_feed_hold, feedHoldNames, currentIndex
+                ) { dialog, which ->
+                    settings.debugVideoFeedHoldMs = feedHolds[which]
+                    dialog.dismiss()
+                    updateSettingsList()
+                }
             }
         ))
 
@@ -2270,7 +2310,7 @@ class SettingsFragment : Fragment() {
         // pending/save flow, like the log level below: this is a tool, not a preference.
         val faultModes = VideoFaultInjector.Mode.entries
         val faultModeNames = faultModes
-            .map { it.name.lowercase().replace('_', ' ').replaceFirstChar { c -> c.uppercase() } }
+            .map { settingsEnumLabel(it.name) }
             .toTypedArray()
         items.add(SettingItem.SettingEntry(
             stableId = "debugVideoFaultInjection",
@@ -2279,34 +2319,32 @@ class SettingsFragment : Fragment() {
             searchKeywords = "fault injection corrupt fragment reassembly test",
             onClick = {
                 val currentIndex = faultModes.indexOf(settings.debugVideoFaultInjection).coerceAtLeast(0)
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.debug_video_fault_injection)
-                    .setSingleChoiceItems(faultModeNames, currentIndex) { dialog, which ->
-                        settings.debugVideoFaultInjection = faultModes[which]
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
+                SettingsDialogs.showSingleChoice(
+                    requireContext(), R.string.debug_video_fault_injection, faultModeNames, currentIndex
+                ) { dialog, which ->
+                    settings.debugVideoFaultInjection = faultModes[which]
+                    dialog.dismiss()
+                    updateSettingsList()
+                }
             }
         ))
 
         if (settings.debugVideoFaultInjection != VideoFaultInjector.Mode.OFF) {
             val faultRates = listOf(10, 30, 100, 300, 1000, 3000)
-            val faultRateNames = faultRates.map { "1 in " + it }.toTypedArray()
+            val faultRateNames = faultRates.map { getString(R.string.settings_fault_rate_value, it) }.toTypedArray()
             items.add(SettingItem.SettingEntry(
                 stableId = "debugVideoFaultRate",
                 nameResId = R.string.debug_video_fault_rate,
-                value = "1 in " + settings.debugVideoFaultRate,
+                value = getString(R.string.settings_fault_rate_value, settings.debugVideoFaultRate),
                 onClick = {
                     val currentIndex = faultRates.indexOf(settings.debugVideoFaultRate).coerceAtLeast(0)
-                    MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                        .setTitle(R.string.debug_video_fault_rate)
-                        .setSingleChoiceItems(faultRateNames, currentIndex) { dialog, which ->
-                            settings.debugVideoFaultRate = faultRates[which]
-                            dialog.dismiss()
-                            updateSettingsList()
-                        }
-                        .show()
+                    SettingsDialogs.showSingleChoice(
+                        requireContext(), R.string.debug_video_fault_rate, faultRateNames, currentIndex
+                    ) { dialog, which ->
+                        settings.debugVideoFaultRate = faultRates[which]
+                        dialog.dismiss()
+                        updateSettingsList()
+                    }
                 }
             ))
 
@@ -2318,14 +2356,13 @@ class SettingsFragment : Fragment() {
                 value = describeFaultBudget(settings.debugVideoFaultBudget),
                 onClick = {
                     val currentIndex = faultBudgets.indexOf(settings.debugVideoFaultBudget).coerceAtLeast(0)
-                    MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                        .setTitle(R.string.debug_video_fault_budget)
-                        .setSingleChoiceItems(faultBudgetNames, currentIndex) { dialog, which ->
-                            settings.debugVideoFaultBudget = faultBudgets[which]
-                            dialog.dismiss()
-                            updateSettingsList()
-                        }
-                        .show()
+                    SettingsDialogs.showSingleChoice(
+                        requireContext(), R.string.debug_video_fault_budget, faultBudgetNames, currentIndex
+                    ) { dialog, which ->
+                        settings.debugVideoFaultBudget = faultBudgets[which]
+                        dialog.dismiss()
+                        updateSettingsList()
+                    }
                 }
             ))
         }
@@ -2346,30 +2383,29 @@ class SettingsFragment : Fragment() {
         ))
 
         val logLevels = LogExporter.LogLevel.entries
-        val logLevelNames = logLevels.map { it.name.lowercase().replaceFirstChar { c -> c.uppercase() } }.toTypedArray()
+        val logLevelNames = logLevels.map { settingsEnumLabel(it.name) }.toTypedArray()
         items.add(SettingItem.SettingEntry(
             stableId = "logLevel",
             nameResId = R.string.log_level,
-            value = settings.exporterLogLevel.name.lowercase().replaceFirstChar { it.uppercase() },
+            value = settingsEnumLabel(settings.exporterLogLevel.name),
             onClick = {
                 val currentIndex = logLevels.indexOf(settings.exporterLogLevel)
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.log_level)
-                    .setSingleChoiceItems(logLevelNames, currentIndex) { dialog, which ->
-                        val newLevel = logLevels[which]
-                        settings.exporterLogLevel = newLevel
-                        if (newLevel == LogExporter.LogLevel.SILENT) {
-                            settings.exporterCaptureEnabled = false
-                            if (settings.logSource == Settings.LogSource.APPLOG_FILE) {
-                                AppLog.init(settings, requireContext().applicationContext)
-                            } else if (LogExporter.isCapturing) {
-                                LogExporter.stopCapture()
-                            }
+                SettingsDialogs.showSingleChoice(
+                    requireContext(), R.string.log_level, logLevelNames, currentIndex
+                ) { dialog, which ->
+                    val newLevel = logLevels[which]
+                    settings.exporterLogLevel = newLevel
+                    if (newLevel == LogExporter.LogLevel.SILENT) {
+                        settings.exporterCaptureEnabled = false
+                        if (settings.logSource == Settings.LogSource.APPLOG_FILE) {
+                            AppLog.init(settings, requireContext().applicationContext)
+                        } else if (LogExporter.isCapturing) {
+                            LogExporter.stopCapture()
                         }
-                        dialog.dismiss()
-                        updateSettingsList()
                     }
-                    .show()
+                    dialog.dismiss()
+                    updateSettingsList()
+                }
             }
         ))
 
@@ -2389,22 +2425,21 @@ class SettingsFragment : Fragment() {
             },
             onClick = {
                 val currentIndex = logSources.indexOf(settings.logSource)
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.log_source)
-                    .setSingleChoiceItems(logSourceNames, currentIndex) { dialog, which ->
-                        val newSource = logSources[which]
-                        settings.logSource = newSource
-                        if (newSource == Settings.LogSource.APPLOG_FILE && LogExporter.isCapturing) {
-                            LogExporter.stopCapture()
-                        }
-                        AppLog.init(settings, requireContext().applicationContext)
-                        if (newSource == Settings.LogSource.APPLOG_FILE && settings.exporterCaptureEnabled && !AppLog.isCapturing) {
-                            settings.exporterCaptureEnabled = false
-                        }
-                        dialog.dismiss()
-                        updateSettingsList()
+                SettingsDialogs.showSingleChoice(
+                    requireContext(), R.string.log_source, logSourceNames, currentIndex
+                ) { dialog, which ->
+                    val newSource = logSources[which]
+                    settings.logSource = newSource
+                    if (newSource == Settings.LogSource.APPLOG_FILE && LogExporter.isCapturing) {
+                        LogExporter.stopCapture()
                     }
-                    .show()
+                    AppLog.init(settings, requireContext().applicationContext)
+                    if (newSource == Settings.LogSource.APPLOG_FILE && settings.exporterCaptureEnabled && !AppLog.isCapturing) {
+                        settings.exporterCaptureEnabled = false
+                    }
+                    dialog.dismiss()
+                    updateSettingsList()
+                }
             }
         ))
 
@@ -2424,25 +2459,24 @@ class SettingsFragment : Fragment() {
             },
             onClick = {
                 val currentIndex = logLocations.indexOf(settings.logLocation)
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.log_location)
-                    .setSingleChoiceItems(logLocationNames, currentIndex) { dialog, which ->
-                        val newLocation = logLocations[which]
-                        val applyLocation: () -> Unit = {
-                            settings.logLocation = newLocation
-                            if (settings.logSource == Settings.LogSource.APPLOG_FILE) {
-                                AppLog.init(settings, requireContext().applicationContext)
-                            }
-                            dialog.dismiss()
-                            updateSettingsList()
+                SettingsDialogs.showSingleChoice(
+                    requireContext(), R.string.log_location, logLocationNames, currentIndex
+                ) { dialog, which ->
+                    val newLocation = logLocations[which]
+                    val applyLocation: () -> Unit = {
+                        settings.logLocation = newLocation
+                        if (settings.logSource == Settings.LogSource.APPLOG_FILE) {
+                            AppLog.init(settings, requireContext().applicationContext)
                         }
-                        if (newLocation == Settings.LogLocation.DOWNLOADS) {
-                            runWithDownloadsStoragePermission(applyLocation)
-                        } else {
-                            applyLocation()
-                        }
+                        dialog.dismiss()
+                        updateSettingsList()
                     }
-                    .show()
+                    if (newLocation == Settings.LogLocation.DOWNLOADS) {
+                        runWithDownloadsStoragePermission(applyLocation)
+                    } else {
+                        applyLocation()
+                    }
+                }
             }
         ))
 
@@ -2935,25 +2969,24 @@ class SettingsFragment : Fragment() {
                 else -> r.resName
             }
         }.toTypedArray()
-        MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-            .setTitle(R.string.change_resolution)
-            .setSingleChoiceItems(labels, pendingResolution ?: 0) { dialog, which ->
-                dialog.dismiss()
-                val picked = Settings.Resolution.fromId(which)
-                val panelKnown = pw > 0 && ph > 0
-                when {
-                    picked == null || picked == Settings.Resolution.AUTO -> applyResolution(which)
-                    // "Higher than the panel" now means the same thing everywhere: it exceeds the
-                    // shared panel ceiling (recommended), which is also what the runtime cap and the
-                    // DPI use (issue #767).
-                    panelKnown && (picked.width > recommended.width || picked.height > recommended.height) ->
-                        showResolutionTooHighDialog(which, recommended.id, recommended.resName)
-                    picked.width >= HIGH_BANDWIDTH_WIDTH ->
-                        showResolutionBandwidthDialog(which, recommended.id)
-                    else -> applyResolution(which)
-                }
+        SettingsDialogs.showSingleChoice(
+            requireContext(), R.string.change_resolution, labels, pendingResolution ?: 0
+        ) { dialog, which ->
+            dialog.dismiss()
+            val picked = Settings.Resolution.fromId(which)
+            val panelKnown = pw > 0 && ph > 0
+            when {
+                picked == null || picked == Settings.Resolution.AUTO -> applyResolution(which)
+                // "Higher than the panel" now means the same thing everywhere: it exceeds the
+                // shared panel ceiling (recommended), which is also what the runtime cap and the
+                // DPI use (issue #767).
+                panelKnown && (picked.width > recommended.width || picked.height > recommended.height) ->
+                    showResolutionTooHighDialog(which, recommended.id, recommended.resName)
+                picked.width >= HIGH_BANDWIDTH_WIDTH ->
+                    showResolutionBandwidthDialog(which, recommended.id)
+                else -> applyResolution(which)
             }
-            .show()
+        }
     }
 
     private fun showResolutionTooHighDialog(pickedId: Int, recommendedId: Int, recommendedName: String) {
@@ -3558,59 +3591,19 @@ class SettingsFragment : Fragment() {
     }
 
     private fun showAudioOffsetsDialog() {
-        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_audio_offsets, null)
-
-        val seekMedia = dialogView.findViewById<android.widget.SeekBar>(R.id.seek_media)
-        val seekGuidance = dialogView.findViewById<android.widget.SeekBar>(R.id.seek_guidance)
-        val seekSystem = dialogView.findViewById<android.widget.SeekBar>(R.id.seek_system)
-
-        val textMedia = dialogView.findViewById<android.widget.TextView>(R.id.text_media_val)
-        val textGuidance = dialogView.findViewById<android.widget.TextView>(R.id.text_guidance_val)
-        val textSystem = dialogView.findViewById<android.widget.TextView>(R.id.text_system_val)
-
-        // Mapping: 0 to 100 on SeekBar -> 0% to 200% Gain. Default is 50 (100% Gain, 0 Offset)
-        // Offset = (seekValue - 50) * 2
-        // seekValue = (offset / 2) + 50
-
-        seekMedia.progress = ((pendingMediaVolumeOffset ?: 0) / 2) + 50
-        seekGuidance.progress = ((pendingGuidanceVolumeOffset ?: 0) / 2) + 50
-        seekSystem.progress = ((pendingSystemVolumeOffset ?: 0) / 2) + 50
-
-        val updateLabels = {
-            textMedia.text = "${(seekMedia.progress * 2)}%"
-            textGuidance.text = "${(seekGuidance.progress * 2)}%"
-            textSystem.text = "${(seekSystem.progress * 2)}%"
+        com.lenid.zoh.main.settings.AudioOffsetsDialog.show(
+            requireContext(),
+            pendingMediaVolumeOffset,
+            pendingGuidanceVolumeOffset,
+            pendingSystemVolumeOffset,
+        ) { media, guidance, system ->
+            pendingMediaVolumeOffset = media
+            pendingGuidanceVolumeOffset = guidance
+            pendingSystemVolumeOffset = system
+            checkChanges()
+            updateSettingsList()
         }
-        updateLabels()
-
-        val listener = object : android.widget.SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: android.widget.SeekBar?, progress: Int, fromUser: Boolean) {
-                updateLabels()
-            }
-            override fun onStartTrackingTouch(seekBar: android.widget.SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: android.widget.SeekBar?) {}
-        }
-
-        seekMedia.setOnSeekBarChangeListener(listener)
-        seekGuidance.setOnSeekBarChangeListener(listener)
-        seekSystem.setOnSeekBarChangeListener(listener)
-
-        MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-            .setTitle(R.string.audio_volume_offset)
-            .setView(dialogView)
-            .setPositiveButton(android.R.string.ok) { dialog, _ ->
-                pendingMediaVolumeOffset = (seekMedia.progress - 50) * 2
-                pendingGuidanceVolumeOffset = (seekGuidance.progress - 50) * 2
-                pendingSystemVolumeOffset = (seekSystem.progress - 50) * 2
-                checkChanges()
-                updateSettingsList()
-                dialog.dismiss()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
     }
-
-
 
     private fun showCustomInsetsDialog() {
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_custom_insets, null)
@@ -3880,15 +3873,14 @@ class SettingsFragment : Fragment() {
             value = labels[values.indexOf(current)],
             searchKeywords = "channel 36 40 44 48 149 unii 5ghz region country band",
             onClick = { _ ->
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle(R.string.five_ghz_channel)
-                    .setSingleChoiceItems(labels, values.indexOf(current)) { dialog, which ->
-                        pendingFiveGhzChannel = values[which]
-                        checkChanges()
-                        dialog.dismiss()
-                        updateSettingsList()
-                    }
-                    .show()
+                SettingsDialogs.showSingleChoice(
+                    requireContext(), R.string.five_ghz_channel, labels, values.indexOf(current)
+                ) { dialog, which ->
+                    pendingFiveGhzChannel = values[which]
+                    checkChanges()
+                    dialog.dismiss()
+                    updateSettingsList()
+                }
             }
         ))
         items.add(SettingItem.InfoBanner(
@@ -4272,96 +4264,6 @@ class SettingsFragment : Fragment() {
         } else {
             baseSummary
         }
-    }
-
-    private fun showNumericInputDialog(
-        title: String,
-        message: String?,
-        initialValue: Int,
-        onConfirm: (Int) -> Unit
-    ) {
-        val context = requireContext()
-        val editView = EditText(context).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER
-            setText(if (initialValue == 0 && title.contains("DPI", true)) "" else initialValue.toString())
-        }
-
-        // Use a container to add padding around the EditText
-        val container = android.widget.FrameLayout(context)
-        val params = android.widget.FrameLayout.LayoutParams(
-            android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-            android.widget.FrameLayout.LayoutParams.WRAP_CONTENT
-        )
-        val margin = (24 * context.resources.displayMetrics.density).toInt()
-        params.setMargins(margin, 8, margin, 8)
-        container.addView(editView, params)
-
-        val dialog = MaterialAlertDialogBuilder(context, R.style.DarkAlertDialog)
-            .setTitle(title)
-            .apply { if (message != null) setMessage(message) }
-            .setView(container)
-            .setPositiveButton(android.R.string.ok) { dialog, _ ->
-                val newVal = (editView.text.toString().toIntOrNull() ?: 0).coerceAtLeast(0)
-                onConfirm(newVal)
-                dialog.dismiss()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .setOnDismissListener {
-                val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE)
-                        as? android.view.inputmethod.InputMethodManager
-                imm?.hideSoftInputFromWindow(editView.windowToken, 0)
-            }
-            .create()
-
-        dialog.window?.clearFlags(
-            android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-            android.view.WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM
-        )
-        dialog.show()
-        editView.requestFocus()
-    }
-
-    private fun showTextInputDialog(
-        context: Context,
-        titleResId: Int,
-        initialValue: String,
-        onConfirm: (String) -> Unit
-    ) {
-        val editView = EditText(context).apply {
-            inputType = InputType.TYPE_CLASS_TEXT
-            setText(initialValue)
-        }
-
-        val container = android.widget.FrameLayout(context)
-        val params = android.widget.FrameLayout.LayoutParams(
-            android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-            android.widget.FrameLayout.LayoutParams.WRAP_CONTENT
-        )
-        val margin = (24 * context.resources.displayMetrics.density).toInt()
-        params.setMargins(margin, 8, margin, 8)
-        container.addView(editView, params)
-
-        val dialog = MaterialAlertDialogBuilder(context, R.style.DarkAlertDialog)
-            .setTitle(titleResId)
-            .setView(container)
-            .setPositiveButton(android.R.string.ok) { dialog, _ ->
-                onConfirm(editView.text.toString())
-                dialog.dismiss()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .setOnDismissListener {
-                val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE)
-                        as? android.view.inputmethod.InputMethodManager
-                imm?.hideSoftInputFromWindow(editView.windowToken, 0)
-            }
-            .create()
-
-        dialog.window?.clearFlags(
-            android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-            android.view.WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM
-        )
-        dialog.show()
-        editView.requestFocus()
     }
 
     private fun handleNativeAaSelection() {

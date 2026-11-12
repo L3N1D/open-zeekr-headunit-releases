@@ -5,19 +5,23 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class OnboardingLaunchPolicyTest {
-    @Test fun `restoring completed setup does not reopen wizard`() {
-        assertFalse(OnboardingLaunchPolicy.shouldShow(2, 2, false))
+    @Test fun `fresh install opens wizard`() {
+        assertTrue(OnboardingLaunchPolicy.shouldShow(0, false, false))
     }
-    @Test fun `fresh installation still gets setup`() {
-        assertTrue(OnboardingLaunchPolicy.shouldShow(0, 2, false))
+    @Test fun `completed setup remains closed after restart`() {
+        assertFalse(OnboardingLaunchPolicy.shouldShow(2, false, false))
     }
-    @Test fun `older setup version gets new steps`() {
-        assertTrue(OnboardingLaunchPolicy.shouldShow(1, 2, false))
+    @Test fun `update does not reopen older completed setup`() {
+        assertFalse(OnboardingLaunchPolicy.shouldShow(1, true, false))
     }
-    @Test fun `manual setup stays available after completion`() {
-        assertTrue(OnboardingLaunchPolicy.shouldShow(2, 2, true))
+    @Test fun `update does not reopen unfinished setup`() {
+        assertFalse(OnboardingLaunchPolicy.shouldShow(0, true, false))
     }
-    @Test fun `downgrade does not repeat completed setup`() {
-        assertFalse(OnboardingLaunchPolicy.shouldShow(3, 2, false))
+    @Test fun `manual setup remains available after update`() {
+        assertTrue(OnboardingLaunchPolicy.shouldShow(2, true, true))
+    }
+    @Test fun `uninstall then fresh install opens setup again`() {
+        assertFalse(OnboardingLaunchPolicy.shouldShow(2, true, false))
+        assertTrue(OnboardingLaunchPolicy.shouldShow(0, false, false))
     }
 }

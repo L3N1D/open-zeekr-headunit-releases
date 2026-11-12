@@ -1,0 +1,28 @@
+<resources>
+    <string name="home_carplay">CarPlay</string>
+    <string name="carplay_disconnect_aa">Disconnect Android Auto before starting CarPlay.</string>
+    <string name="carplay_ready">Choose a direct CarPlay connection</string>
+    <string name="carplay_usb">iPhone via USB</string>
+    <string name="carplay_wireless">iPhone via Wi-Fi</string>
+    <string name="carplay_stop">Disconnect</string>
+    <string name="carplay_auth_missing">CarPlay authentication is not configured. Import a ZIP containing your identity.pk8 and certificate.p7b before connecting.</string>
+    <string name="carplay_auth_invalid">The authentication archive is invalid or the certificate does not match the key.</string>
+    <string name="carplay_import_auth">Import authentication</string>
+    <string name="carplay_importing">Checking authentication…</string>
+    <string name="carplay_start_failed">CarPlay could not start. Check authentication, permissions and the iPhone connection.</string>
+    <string name="carplay_starting">Starting CarPlay…</string>
+    <string name="carplay_waiting">Waiting for iPhone…</string>
+    <string name="carplay_connected">CarPlay connected</string>
+    <string name="carplay_notification">Direct iPhone connection</string>
+    <string name="carplay_permissions_required">Allow the requested permissions to connect CarPlay.</string>
+    <string name="carplay_android_required">Direct CarPlay requires Android 7 or newer.</string>
+    <string name="carplay_vpn_required">Allow the local VPN interface to connect an iPhone by USB.</string>
+    <string name="carplay_subtitle">Your iPhone, on the big screen. Choose how to connect.</string>
+    <string name="carplay_usb_hint">Connect your iPhone with a USB cable</string>
+    <string name="carplay_wifi_hint">Keep Bluetooth and Wi-Fi enabled on your iPhone</string>
+    <string name="carplay_setup">Connection setup</string>
+    <string name="carplay_close">Close CarPlay panel</string>
+    <string name="carplay_direct_badge">DIRECT CONNECTION</string>
+    <string name="usb_panel_subtitle">Connect your Android phone by USB to start Android Auto.</string>
+    <string name="usb_panel_hint">Use a cable that supports data transfer. Connected devices appear here automatically.</string>
+</resources>

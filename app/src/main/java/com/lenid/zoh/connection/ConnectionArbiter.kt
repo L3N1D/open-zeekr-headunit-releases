@@ -34,6 +34,45 @@ object ConnectionArbiter {
     internal var clock: () -> Long = { SystemClock.elapsedRealtime() }
 
     private var holder: Claim? = null
+    class ExternalLease internal constructor()
+    private var externalLease: ExternalLease? = null
+    private var externalWirelessOwed = false
+    private var externalUsbOwed = false
+
+    /** Explicit projection mode; never displaces a live AA connection or attempt. */
+    fun reserveExternal(isSessionBusy: () -> Boolean): ExternalLease? {
+        val lease: ExternalLease
+        synchronized(this) {
+            if (externalLease != null || holder != null || isSessionBusy()) return null
+            lease = ExternalLease()
+            externalLease = lease
+            generation++ // invalidate pending AA give-backs before stopping discovery
+            externalWirelessOwed = wirelessOwed
+            externalUsbOwed = usbOwed
+            clearDebts()
+            quietPending = false
+            endUsbEpisode()
+        }
+        val stopped = actions?.standDownWireless(Claim(Tier.USER, Owner.MANUAL, "CarPlay", clock())) == true
+        synchronized(this) { if (externalLease === lease) externalWirelessOwed = externalWirelessOwed || stopped }
+        return lease
+    }
+
+    /** Called only after the external transport has finished teardown. */
+    fun releaseExternal(lease: ExternalLease) {
+        val wireless: Boolean
+        val usb: Boolean
+        synchronized(this) {
+            if (externalLease !== lease) return
+            externalLease = null
+            wireless = externalWirelessOwed
+            usb = externalUsbOwed
+            externalWirelessOwed = false
+            externalUsbOwed = false
+        }
+        if (wireless || usb) actions?.giveBack(wireless, usb)
+    }
+
     private var wirelessOwed = false
     private var usbOwed = false
     private var owedAfterSession = false
@@ -53,6 +92,11 @@ object ConnectionArbiter {
         val spent: Boolean
         var episodeToWatch = -1L
         synchronized(this) {
+            if (externalLease != null) {
+                if (owner == Owner.USB) externalUsbOwed = true
+                else externalWirelessOwed = true
+                return null
+            }
             // Recovery transfers an existing attempt to a physical open. Checking and
             // replacing the holder together prevents an old job from stealing a newer claim.
             if (expectedHolder != null && holder !== expectedHolder) return null
@@ -200,6 +244,10 @@ object ConnectionArbiter {
     fun refusesBackground(userRequested: Boolean): Boolean {
         val reason: String
         synchronized(this) {
+            if (externalLease != null) {
+                externalWirelessOwed = true
+                return true
+            }
             if (userRequested) return false
             val current = holder
             if (current != null) {
@@ -267,6 +315,9 @@ object ConnectionArbiter {
     /** Tests only. */
     internal fun reset() = synchronized(this) {
         holder = null
+        externalLease = null
+        externalWirelessOwed = false
+        externalUsbOwed = false
         generation = 0L
         quietPending = false
         clearDebts()

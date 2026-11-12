@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
+        <activity android:name=".debug.CarPlayBridgeTestActivity" android:exported="true" android:theme="@style/AppTheme" />
+        <activity android:name=".debug.ResizeMotionPreviewActivity" android:exported="true" android:theme="@style/AppTheme" />
         <activity
             android:name=".debug.ProjectionSafeAreaTestActivity"
             android:allowEmbedded="true"

@@ -89,7 +89,7 @@ object HomeUiHelper {
     )
 
     private val scaledTiles = listOf(
-        R.id.usb_button, R.id.wifi_button, R.id.settings_button, R.id.exit_button,
+        R.id.usb_button, R.id.wifi_button, R.id.carplay_button, R.id.settings_button, R.id.exit_button,
         // The scroll view keeps the tiles' width, so it scales with them.
         R.id.home_bar_scroll
     )
@@ -99,7 +99,7 @@ object HomeUiHelper {
      * the icon like the others, so it stays readable at the smallest scale too.
      */
     private val fittedTiles = listOf(
-        R.id.usb_button, R.id.wifi_button, R.id.settings_button, R.id.exit_button,
+        R.id.usb_button, R.id.wifi_button, R.id.carplay_button, R.id.settings_button, R.id.exit_button,
         R.id.home_bar_scroll
     )
 
@@ -376,7 +376,7 @@ object HomeUiHelper {
         }
 
         // Color on the bar means a connection, so Settings and the other shortcuts stay neutral.
-        listOf(R.id.dongle_button, R.id.settings_button, R.id.hud_map_button, R.id.updates_button).forEach { id ->
+        listOf(R.id.carplay_button, R.id.dongle_button, R.id.settings_button, R.id.hud_map_button, R.id.updates_button).forEach { id ->
             rootView.findViewById<ViewGroup>(id)?.let { paintTile(it, tileBackground(context, palette), palette.text, palette.text) }
         }
     }

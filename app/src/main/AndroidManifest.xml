@@ -3,9 +3,11 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-sdk tools:overrideLibrary="
-        com.google.android.gms.nearby, com.google.android.gms.base, com.google.android.gms.tasks, com.google.android.gms.common,
+        com.shilapi.xcertplay.shared, com.google.android.gms.nearby, com.google.android.gms.base, com.google.android.gms.tasks, com.google.android.gms.common,
         rikka.shizuku.provider, rikka.shizuku.api, rikka.shizuku.shared, rikka.shizuku.aidl, com.topjohnwu.superuser" />
 
+    <permission android:name="${applicationId}.USB_PERMISSION_RESULT" android:protectionLevel="signature" />
+    <uses-permission android:name="${applicationId}.USB_PERMISSION_RESULT" />
     <queries>
         <package android:name="moe.shizuku.privileged.api" />
         <!-- OH Route Map: its "feed GMC" switch (GmcGuidanceBridge) -->
@@ -68,6 +70,11 @@
         android:usesPermissionFlags="neverForLocation"
         tools:targetApi="s" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- Optional platform privileges. SelfPermissionGrant only targets this app's own UID. -->
+    <uses-permission android:name="android.permission.GRANT_RUNTIME_PERMISSIONS"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.MANAGE_APP_OPS_MODES"
+        tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
     <!-- Installs its own updates from the GitHub releases (the user confirms each). -->
@@ -129,12 +136,22 @@
 
     <application
         android:name=".App"
+        android:allowBackup="false"
         android:hardwareAccelerated="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/title"
         android:largeHeap="true"
         android:supportsRtl="true"
         tools:ignore="GoogleAppIndexingWarning">
+        <activity android:name=".carplay.DirectCarPlayActivity" android:exported="false"
+            android:theme="@style/AppTheme.ConnectionOverlay"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|uiMode|density|keyboardHidden"
+            android:resizeableActivity="true" />
+        <service android:name=".carplay.DirectCarPlayService" android:exported="false"
+            android:foregroundServiceType="connectedDevice|mediaPlayback|microphone" />
+        <service android:name="com.shilapi.xcertplay.network.CarPlayVpnService"
+            android:permission="android.permission.BIND_VPN_SERVICE" android:exported="false" />
+
 
         <activity
             android:name=".aap.AapProjectionActivity"
@@ -179,10 +196,9 @@
             android:name=".dongle.DongleActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|keyboard|navigation|uiMode|density"
             android:exported="true"
-            android:launchMode="singleTask"
-            android:resizeableActivity="false"
-            android:screenOrientation="sensorLandscape"
-            android:theme="@style/AppTheme">
+            android:resizeableActivity="true"
+            android:screenOrientation="behind"
+            android:theme="@style/AppTheme.DongleConnection">
             <intent-filter>
                 <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
             </intent-filter>

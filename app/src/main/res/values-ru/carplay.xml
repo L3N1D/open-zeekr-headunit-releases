@@ -1,0 +1,28 @@
+<resources>
+    <string name="home_carplay">CarPlay</string>
+    <string name="carplay_disconnect_aa">Перед запуском CarPlay отключите Android Auto.</string>
+    <string name="carplay_ready">Выберите прямое подключение CarPlay</string>
+    <string name="carplay_usb">iPhone по USB</string>
+    <string name="carplay_wireless">iPhone по Wi-Fi</string>
+    <string name="carplay_stop">Отключить</string>
+    <string name="carplay_auth_missing">Аутентификация CarPlay не настроена. Перед подключением импортируйте ZIP с вашими identity.pk8 и certificate.p7b.</string>
+    <string name="carplay_auth_invalid">Архив аутентификации некорректен или сертификат не соответствует ключу.</string>
+    <string name="carplay_import_auth">Импорт аутентификации</string>
+    <string name="carplay_importing">Проверка аутентификации…</string>
+    <string name="carplay_start_failed">Не удалось запустить CarPlay. Проверьте аутентификацию, разрешения и подключение iPhone.</string>
+    <string name="carplay_starting">Запуск CarPlay…</string>
+    <string name="carplay_waiting">Ожидание iPhone…</string>
+    <string name="carplay_connected">CarPlay подключён</string>
+    <string name="carplay_notification">Прямое подключение iPhone</string>
+    <string name="carplay_permissions_required">Для подключения CarPlay предоставьте запрошенные разрешения.</string>
+    <string name="carplay_android_required">Прямой CarPlay требует Android 7 или новее.</string>
+    <string name="carplay_vpn_required">Для подключения iPhone по USB разрешите локальный VPN-интерфейс.</string>
+    <string name="carplay_subtitle">Ваш iPhone на большом экране. Выберите способ подключения.</string>
+    <string name="carplay_usb_hint">Подключите iPhone кабелем к USB-порту</string>
+    <string name="carplay_wifi_hint">Включите Bluetooth и Wi-Fi на iPhone</string>
+    <string name="carplay_setup">Настройка подключения</string>
+    <string name="carplay_close">Закрыть карточку CarPlay</string>
+    <string name="carplay_direct_badge">БЕЗ ДОНГЛА</string>
+    <string name="usb_panel_subtitle">Подключите Android-смартфон по USB, чтобы запустить Android Auto.</string>
+    <string name="usb_panel_hint">Используйте кабель с передачей данных. Подключённые устройства появятся здесь автоматически.</string>
+</resources>

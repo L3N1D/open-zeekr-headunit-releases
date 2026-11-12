@@ -1,0 +1,35 @@
+<resources>
+    <string name="settings_label_0">Неизвестно</string>
+    <string name="settings_label_1">Определять автоматически</string>
+    <string name="settings_label_2">Выключено</string>
+    <string name="settings_label_3">Весь сеанс</string>
+    <string name="settings_label_4">Без ограничения (прежний режим)</string>
+    <string name="settings_label_5">10 блоков (малая задержка)</string>
+    <string name="settings_label_6">20 блоков (сбалансированно)</string>
+    <string name="settings_label_7">50 блоков (большая задержка)</string>
+    <string name="settings_label_8">Без ограничения очереди</string>
+    <string name="settings_label_9">1× (минимальная задержка)</string>
+    <string name="settings_label_10">2× (малая задержка)</string>
+    <string name="settings_label_11">4× (средняя задержка)</string>
+    <string name="settings_label_12">8× (большая задержка)</string>
+    <string name="settings_label_13">16× (максимальная задержка, по умолчанию)</string>
+    <string name="settings_fault_count">Ошибок: %1$d</string>
+    <string name="settings_queue_chunks">Блоков: %1$d</string>
+    <string name="settings_frame_ms">%1$d мс на кадр</string>
+    <string name="settings_fault_rate_value">1 из %1$d</string>
+    <string name="settings_enum_constrained">Ограниченная память</string>
+    <string name="settings_enum_normal">Обычная память</string>
+    <string name="settings_enum_ample">Большой объём памяти</string>
+    <string name="settings_enum_off">Выключено</string>
+    <string name="settings_enum_drop_first_fragment">Пропуск первого фрагмента</string>
+    <string name="settings_enum_drop_middle_fragment">Пропуск среднего фрагмента</string>
+    <string name="settings_enum_drop_last_fragment">Пропуск последнего фрагмента</string>
+    <string name="settings_enum_hide_start_code">Скрытие стартового кода</string>
+    <string name="settings_enum_drop_middle_fragment_in_reader">Пропуск среднего фрагмента при чтении</string>
+    <string name="settings_enum_verbose">Подробный</string>
+    <string name="settings_enum_debug">Отладка</string>
+    <string name="settings_enum_info">Информация</string>
+    <string name="settings_enum_warning">Предупреждения</string>
+    <string name="settings_enum_error">Ошибки</string>
+    <string name="settings_enum_silent">Без журналирования</string>
+</resources>

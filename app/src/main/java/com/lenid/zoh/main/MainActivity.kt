@@ -1344,7 +1344,7 @@ class MainActivity : BaseActivity() {
                 dismissedAtEpochMs = settings.connectionIssueDismissedAtEpochMs,
                 sessionConnected = App.provide(this).commManager.isConnected,
                 onboardingComplete =
-                    settings.onboardingVersion >= OnboardingActivity.CURRENT_ONBOARDING_VERSION,
+                    !OnboardingLaunchPolicy.shouldShow(settings.onboardingVersion, settings.isUpdatedInstallation, false),
                 relevant = ConnectionIssueBannerPolicy.relevantNow(
                     mode = settings.wifiConnectionMode.id,
                     transport = settings.nativeApStrategy,
@@ -1525,9 +1525,9 @@ class MainActivity : BaseActivity() {
 
     fun checkSetupFlow() {
         val appSettings = Settings(this)
-        // Show the intelligent onboarding wizard once whenever the stored version is
-        // older than the current one (covers fresh installs and upgraders alike).
-        val wizardPending = appSettings.onboardingVersion < OnboardingActivity.CURRENT_ONBOARDING_VERSION
+        // Updates preserve the user's setup, even if the old wizard was deferred.
+        val wizardPending = OnboardingLaunchPolicy.shouldShow(
+            appSettings.onboardingVersion, appSettings.isUpdatedInstallation, false)
         if (wizardPending && !OnboardingActivity.deferredThisSession) {
             // The wizard's permissions step handles runtime permissions, so don't also prompt here.
             // The wizard has a task of its own (see the manifest), so a Home intent that clears

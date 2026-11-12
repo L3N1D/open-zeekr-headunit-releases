@@ -80,6 +80,11 @@
         </LinearLayout>
 
 
+        <LinearLayout android:id="@+id/carplay_button" style="@style/HomeTile" android:layout_width="0dp" android:layout_weight="1">
+            <ImageView style="@style/HomeTileIcon" app:srcCompat="@drawable/ic_carplay" />
+            <com.lenid.zoh.view.WordFitTextView style="@style/HomeTileLabel.Wrap" android:text="@string/home_carplay" />
+        </LinearLayout>
+
         <LinearLayout
             android:id="@+id/settings_button"
             style="@style/HomeTile"

@@ -525,8 +525,8 @@ class Settings(private val context: Context) {
                 prefs.edit().putInt("fullscreen-mode", migrated.value).apply()
                 return migrated
             }
-            val value = prefs.getInt("fullscreen-mode", FullscreenMode.IMMERSIVE.value)
-            return FullscreenMode.fromInt(value) ?: FullscreenMode.IMMERSIVE
+            val value = prefs.getInt("fullscreen-mode", FullscreenMode.NONE.value)
+            return FullscreenMode.fromInt(value) ?: FullscreenMode.NONE
         }
         set(value) { prefs.edit().putInt("fullscreen-mode", value.value).apply() }
 
@@ -1127,9 +1127,13 @@ class Settings(private val context: Context) {
         get() = prefs.getBoolean("has-completed-setup-wizard", false)
         set(value) { prefs.edit().putBoolean("has-completed-setup-wizard", value).apply() }
 
-    // Version of the onboarding flow the user has already seen. When this is lower than
-    // CURRENT_ONBOARDING_VERSION the wizard is shown again (so upgraders see new steps once).
-    // Migration: users who finished the old dialog wizard are treated as having seen version 1.
+    // Completed wizard revision; newer revisions do not trigger setup again.
+    val isUpdatedInstallation: Boolean
+        get() = try {
+            val info = context.packageManager.getPackageInfo(context.packageName, 0)
+            info.lastUpdateTime > info.firstInstallTime
+        } catch (_: android.content.pm.PackageManager.NameNotFoundException) { false }
+
     var onboardingVersion: Int
         get() {
             if (!prefs.contains("onboarding-version") &&
@@ -1533,8 +1537,8 @@ class Settings(private val context: Context) {
         set(value) { prefs.edit().putInt("auto-disconnect-bt-delay-seconds", value).apply() }
 
     var appLanguage: String
-        get() = prefs.getString("app-language", "")!!
-        set(value) { prefs.edit().putString("app-language", value).apply() }
+        get() = AppLanguagePolicy.normalize(prefs.getString("app-language", null))
+        set(value) { prefs.edit().putString("app-language", AppLanguagePolicy.normalize(value)).apply() }
 
     // Per-channel playback gain, as a percentage offset applied by AudioDecoder.setGain. Named
     // after the channel each one drives - MEDIA on ID_AUD, guidance on ID_AU1, system sounds on

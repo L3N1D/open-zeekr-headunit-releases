@@ -44,6 +44,9 @@ class AboutFragment : Fragment() {
         sb.append(parseMarkdownToHtml(readAsset("CHANGELOG.md")))
         sb.append("<br/><br/>")
 
+        sb.append("<h3>CarPlay</h3>")
+        sb.append("Based on LIVI by Lasse Heitgres (<a href=\"https://github.com/f-io/LIVI\">https://github.com/f-io/LIVI</a>). GPL-3.0-or-later.<br/>")
+        sb.append("CarPlay protocol additions from <a href=\"https://github.com/Altair571/tarmac\">Tarmac</a>, based on DiPlay. GPL-3.0.<br/><br/>")
         sb.append("<h3>LICENSE</h3>")
         // License is plain text, preserve newlines
         val license = readAsset("LICENSE").replace("\n", "<br/>")

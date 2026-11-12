@@ -1,7 +1,7 @@
 package com.lenid.zoh.main
 
-/** Android can restore the wizard task without going through MainActivity's setup check. */
+/** Automatic setup belongs to a fresh install, never to an APK update. */
 internal object OnboardingLaunchPolicy {
-    fun shouldShow(completedVersion: Int, currentVersion: Int, manual: Boolean): Boolean =
-        manual || completedVersion < currentVersion
+    fun shouldShow(completedVersion: Int, updatedInstall: Boolean, manual: Boolean): Boolean =
+        manual || (completedVersion == 0 && !updatedInstall)
 }

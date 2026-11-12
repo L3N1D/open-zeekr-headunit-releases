@@ -8,10 +8,11 @@
     android:id="@+id/dongle_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/black">
+    android:background="@android:color/transparent">
 
     <SurfaceView
         android:id="@+id/dongle_video"
+        android:visibility="invisible"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="center" />
@@ -33,106 +34,5 @@
     <FrameLayout
         android:id="@+id/dongle_overlay"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="?android:attr/colorBackground">
-
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="600dp"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            app:cardBackgroundColor="@color/update_card_bg"
-            app:cardCornerRadius="28dp"
-            app:cardElevation="0dp"
-            app:strokeWidth="0dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_horizontal"
-                android:orientation="vertical"
-                android:padding="40dp">
-
-                <FrameLayout
-                    android:layout_width="96dp"
-                    android:layout_height="96dp"
-                    android:background="@drawable/bg_update_app_icon">
-
-                    <ImageView
-                        android:layout_width="56dp"
-                        android:layout_height="56dp"
-                        android:layout_gravity="center"
-                        android:importantForAccessibility="no"
-                        android:src="@drawable/ic_dongle_white"
-                        app:tint="@color/update_icon_glyph" />
-                </FrameLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
-                    android:text="@string/dongle_title"
-                    android:textColor="?android:attr/textColorPrimary"
-                    android:textSize="28sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/dongle_status"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:gravity="center"
-                    android:textColor="?android:attr/textColorSecondary"
-                    android:textSize="20sp" />
-
-                <com.google.android.material.progressindicator.LinearProgressIndicator
-                    android:id="@+id/dongle_progress"
-                    android:layout_width="260dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
-                    android:indeterminate="true"
-                    app:indicatorColor="@color/brand_teal"
-                    app:trackColor="@color/update_progress_track"
-                    app:trackCornerRadius="4dp"
-                    app:trackThickness="8dp" />
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="32dp"
-                    android:orientation="horizontal">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/dongle_home"
-                        style="@style/Widget.Material3.Button"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minHeight="56dp"
-                        android:paddingStart="24dp"
-                        android:paddingEnd="28dp"
-                        android:text="@string/dongle_home"
-                        android:textSize="18sp"
-                        app:backgroundTint="@color/brand_teal"
-                        app:icon="@drawable/ic_arrow_back_white"
-                        app:iconGravity="textStart" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/dongle_settings"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="10dp"
-                        android:minHeight="56dp"
-                        android:paddingStart="24dp"
-                        android:paddingEnd="28dp"
-                        android:text="@string/dongle_settings"
-                        android:textColor="@color/segment_selected_text"
-                        android:textSize="18sp"
-                        app:backgroundTint="@color/segment_selected_bg"
-                        app:icon="@drawable/ic_settings_white"
-                        app:iconGravity="textStart"
-                        app:iconTint="@color/segment_selected_text" />
-                </LinearLayout>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-    </FrameLayout>
+        android:layout_height="match_parent" />
 </FrameLayout>

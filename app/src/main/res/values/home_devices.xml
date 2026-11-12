@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_devices_title">Devices</string>
+    <string name="home_devices_subtitle">Choose a device to connect</string>
+    <string name="home_devices_refresh">Refresh devices</string>
+    <string name="home_device_connect">Connect</string>
+    <string name="home_devices_hint">Paired phones may be out of range. Projection support is checked when connecting.</string>
+    <string name="home_devices_bluetooth_unavailable">Bluetooth is off or unavailable. USB devices are shown; use the connection tiles to set up wireless.</string>
+    <string name="home_devices_empty">No devices found\nConnect a USB device or pair a phone via Bluetooth.</string>
+    <string name="home_device_unnamed">Phone</string>
+    <string name="home_device_aa_usb">Android Auto · USB</string>
+    <string name="home_device_aa_wireless">Android Auto · Wireless · Paired</string>
+    <string name="home_device_cp_usb">CarPlay · USB</string>
+    <string name="home_device_cp_wireless">CarPlay · Wireless · Paired</string>
+    <string name="home_device_dongle">Dongle · USB</string>
+    <string name="home_device_gone">Device is no longer available. Refresh the list.</string>
+    <string name="home_device_one_iphone">Keep only the selected iPhone connected by USB.</string>
+</resources>

@@ -1,0 +1,29 @@
+<resources>
+    <string name="carplay_options_title">CarPlay: диагностика и Ultra</string>
+    <string name="carplay_options_summary">Этапы подключения, отчёт и экспериментальный режим</string>
+    <string name="carplay_ultra_title">CarPlay Ultra — эксперимент</string>
+    <string name="carplay_ultra_summary">Применяется при следующем подключении. Добавляет протокол Ultra и сведения о приложении. Климат, радио и показатели Zeekr пока не подключены. Команды автомобилю не отправляются. Работа с iPhone ещё не проверена.</string>
+    <string name="carplay_trace_title">Подробная диагностика протокола</string>
+    <string name="carplay_trace_summary">Для поиска ошибок. Применяется при следующем подключении и увеличивает объём технического журнала. Выключите после проверки. В сохраняемый отчёт входят только этапы и категории ошибок.</string>
+    <string name="carplay_export_report">Сохранить отчёт</string>
+    <string name="carplay_export_failed">Не удалось сохранить отчёт CarPlay</string>
+    <string name="carplay_vehicle_version">Версия приложения</string>
+    <string name="carplay_stage_auth">Проверка аутентификации CarPlay…</string>
+    <string name="carplay_stage_permission">Ожидание разрешения на доступ к USB…</string>
+    <string name="carplay_stage_wifi">Подготовка Wi-Fi для CarPlay…</string>
+    <string name="carplay_stage_pair_phone">Подключите iPhone по Bluetooth и повторите попытку.</string>
+    <string name="carplay_stage_bluetooth">Подключение к iPhone по Bluetooth…</string>
+    <string name="carplay_stage_usb">Поиск iPhone по USB…</string>
+    <string name="carplay_stage_usb_missing">iPhone не найден по USB. Проверьте кабель и USB-порт.</string>
+    <string name="carplay_stage_usb_mode">Переключение USB в режим CarPlay…</string>
+    <string name="carplay_stage_transport">Открытие каналов передачи CarPlay…</string>
+    <string name="carplay_stage_pairing">Сопряжение с iPhone… Подтвердите доверие на телефоне, если появится запрос.</string>
+    <string name="carplay_stage_control">Запуск управляющего канала CarPlay…</string>
+    <string name="carplay_stage_network">Подключение локального сетевого канала…</string>
+    <string name="carplay_stage_ended">Сеанс CarPlay завершён. Можно подключиться снова.</string>
+    <string name="carplay_error_usb">Ошибка обмена по USB. Переподключите устройство; этап сбоя сохранён в отчёте CarPlay.</string>
+    <string name="carplay_error_timeout">Устройство не ответило вовремя. Проверьте подключение; этап сбоя сохранён в отчёте CarPlay.</string>
+    <string name="carplay_error_wifi">Не удалось подготовить Wi-Fi. Проверьте подключение и точку доступа.</string>
+    <string name="carplay_error_wireless">Не удалось установить беспроводное соединение. Проверьте Bluetooth и Wi-Fi.</string>
+    <string name="carplay_error_connection">Не удалось подключить CarPlay. Сохраните отчёт в настройках CarPlay: в нём указан этап сбоя.</string>
+</resources>

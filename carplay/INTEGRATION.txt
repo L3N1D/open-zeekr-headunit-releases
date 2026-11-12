@@ -1,0 +1,50 @@
+Direct CarPlay integration - experimental in 1.0.4; hardware interoperability unverified
+
+Host: app/src/main/java/com/lenid/zoh/carplay
+Protocol source and license: UPSTREAM.txt and LICENSE.
+
+The service owns one explicitly started session. Activity recreation and window
+size changes attach/detach its rendering surface and select a negotiated viewArea.
+The main stream canvas is fixed for the lifetime of the session. Both reference
+Zeekr card sizes are advertised before pairing; AA sizing code is unchanged.
+
+An external ConnectionArbiter lease rejects competing AA transport attempts while
+CarPlay is starting/running/tearing down. It cannot displace an AA session or an
+existing AA attempt. AA discovery resumes only after CarPlay transport teardown.
+There is no automatic boot start and no vehicle-specific BYD control is enabled.
+
+Authentication is not bundled. The user imports an accessory identity ZIP with
+identity.pk8 and certificate.p7b (optionally under offline-mfi/). The local MFi
+loader checks that the EC key matches the certificate. Authentication and pairing
+records live in app-private noBackupFilesDir, separately from AA preferences.
+USB requires user consent for the app-scoped local NCM VPN. Wireless uses Android
+Bluetooth/Wi-Fi APIs, and requires compatible hardware plus runtime permissions.
+
+Verification limits:
+- Build and host unit tests do not establish iPhone protocol interoperability.
+- A DiPlay 0.2.22 experimental identity was subsequently supplied locally at the
+  user's request. On emulator-5554 the local MFi loader accepted the key/certificate,
+  wired discovery reached WaitingForIphone, and shutdown completed normally.
+  No real iPhone or head unit was available. The identity is not bundled in APKs;
+  the local test archive is under ignored backups/carplay-auth/.
+- Live audio, microphone, touch coordinates and viewArea updates need device tests.
+- Embedding the CarPlay screen through the launcher's existing AA card entry path
+  remains a separate integration step; no AA launcher routing was replaced here.
+- Confirm real Wi-Fi group teardown/order and AA restoration before release.
+- Do not publish this experimental build as verified direct CarPlay support.
+
+Tarmac adaptations (2026-11-12):
+- iAP2 trace output and the optional iPhone syslog relay require explicit tracing.
+- Skip redundant Bluetooth profile lookups when at most one iPhone is paired.
+- Host shows localized connection stages and classified failures. Export includes
+  only bounded stage history and error categories, not protocol messages/secrets.
+- Ultra is an opt-in next-session feature in Settings > Connection > CarPlay.
+  Its disabled configuration retains the normal feature set and screen layout.
+  Enabled mode implements vehicleStateProtocol and shows app version; the host
+  advertises no climate, seats, radio, or unverified vehicle data and refuses writes.
+  No synthetic cluster video stream, OEM controls or radio settings are introduced.
+  Unknown-stream probing requires detailed tracing as well as Ultra.
+- Based on LIVI by Lasse Heitgres (https://github.com/f-io/LIVI), via Tarmac.
+  See UPSTREAM.txt and docs/licenses/LIVI-NOTICE.txt.
+- This is protocol integration, not verified Zeekr climate/radio/Ultra support.
+  Real iPhone/TBox handshake, picture, sound and live resizing remain hardware tests.

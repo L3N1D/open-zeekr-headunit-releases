@@ -1,0 +1,13 @@
+DiPlay protocol and media backend
+https://github.com/shihabal3amri/DiPlay
+Commit: 615b32ce0b40cd0b99ce94ba23a512001553684f
+Based on xcertplay, GPL-3.0. See LICENSE and source notices.
+No accessory identities, APK signing keys, BYD icon assets or DiPlay UI are included.
+Local adaptation: Android 36 / NDK 29, protocol library only.
+Host integration disables BYD navigation, Bluetooth suspend and ambient lighting hooks.
+No upstream boot receivers, vehicle UI or global Wi-Fi scan changes are enabled.
+
+CarPlay Ultra, trace gating and Bluetooth selection adaptations from Tarmac
+https://github.com/Altair571/tarmac commit 49e4b6ecb96ee3cc5b781b86b01001eff32cd852
+Based on LIVI by Lasse Heitgres (https://github.com/f-io/LIVI)
+See docs/licenses/LIVI-NOTICE.txt. Ultra defaults off; no Zeekr vehicle adapters.

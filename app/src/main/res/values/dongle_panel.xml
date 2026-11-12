@@ -1,0 +1,4 @@
+<resources>
+    <string name="dongle_panel_subtitle">Android Auto and CarPlay through a Carlinkit / AutoKit USB adapter.</string>
+    <string name="dongle_panel_hint">Connect the adapter to the head unit, then connect your phone to it. Projection opens automatically.</string>
+</resources>

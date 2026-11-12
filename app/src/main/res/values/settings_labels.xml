@@ -1,0 +1,35 @@
+<resources>
+    <string name="settings_label_0">Unknown</string>
+    <string name="settings_label_1">Measure</string>
+    <string name="settings_label_2">Off</string>
+    <string name="settings_label_3">Whole session</string>
+    <string name="settings_label_4">Unbounded (Legacy)</string>
+    <string name="settings_label_5">10 chunks (Low Latency)</string>
+    <string name="settings_label_6">20 chunks (Balanced)</string>
+    <string name="settings_label_7">50 chunks (High Latency)</string>
+    <string name="settings_label_8">Unbounded (Max Backlog)</string>
+    <string name="settings_label_9">1x (lowest latency)</string>
+    <string name="settings_label_10">2x (low latency)</string>
+    <string name="settings_label_11">4x (medium)</string>
+    <string name="settings_label_12">8x (deep)</string>
+    <string name="settings_label_13">16x (deepest, default)</string>
+    <string name="settings_fault_count">%1$d faults</string>
+    <string name="settings_queue_chunks">%1$d chunks</string>
+    <string name="settings_frame_ms">%1$d ms per frame</string>
+    <string name="settings_fault_rate_value">1 in %1$d</string>
+    <string name="settings_enum_constrained">Constrained</string>
+    <string name="settings_enum_normal">Normal</string>
+    <string name="settings_enum_ample">Ample</string>
+    <string name="settings_enum_off">Off</string>
+    <string name="settings_enum_drop_first_fragment">Drop first fragment</string>
+    <string name="settings_enum_drop_middle_fragment">Drop middle fragment</string>
+    <string name="settings_enum_drop_last_fragment">Drop last fragment</string>
+    <string name="settings_enum_hide_start_code">Hide start code</string>
+    <string name="settings_enum_drop_middle_fragment_in_reader">Drop middle fragment in reader</string>
+    <string name="settings_enum_verbose">Verbose</string>
+    <string name="settings_enum_debug">Debug</string>
+    <string name="settings_enum_info">Info</string>
+    <string name="settings_enum_warning">Warning</string>
+    <string name="settings_enum_error">Error</string>
+    <string name="settings_enum_silent">Silent</string>
+</resources>

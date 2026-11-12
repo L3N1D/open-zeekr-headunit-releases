@@ -1058,6 +1058,11 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         // stopped behind the phone's call screen.
 
         setContentView(R.layout.activity_headunit)
+        if (Build.VERSION.SDK_INT >= 18) {
+            resizeMotion = com.lenid.zoh.view.ProjectionResizeMotion(findViewById<FrameLayout>(R.id.container)) {
+                !App.isPiPActive && commManager.connectionState.value is CommManager.ConnectionState.TransportStarted
+            }
+        }
 
         if (settings.showPerformanceOverlay) {
             attachPerformanceOverlay()
@@ -2289,7 +2294,11 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         }
     }
 
+    private var resizeMotion: com.lenid.zoh.view.ProjectionResizeMotion? = null
+
     override fun onDestroy() {
+        resizeMotion?.dispose()
+        resizeMotion = null
         liveWindow.detach(this)
         // TextureView/GLES destruction can arrive after this activity removes its callback.
         // Stop our target now, while it is still valid, without touching a replacement owner.

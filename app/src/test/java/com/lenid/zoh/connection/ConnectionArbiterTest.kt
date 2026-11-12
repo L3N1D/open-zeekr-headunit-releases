@@ -53,6 +53,31 @@ class ConnectionArbiterTest {
         savedLogger?.let { AppLog.LOGGER = it }
     }
 
+    @Test
+    fun `external projection never takes a live AA session or attempt`() {
+        assertEquals(null, ConnectionArbiter.reserveExternal { true })
+        val aa = must(ConnectionArbiter.claim(Tier.USER, Owner.MANUAL, "AA"))
+        assertEquals(null, ConnectionArbiter.reserveExternal { false })
+        assertTrue(ConnectionArbiter.holds(aa))
+    }
+
+    @Test
+    fun `external projection holds radios until teardown and restores discovery once`() {
+        val lease = must(ConnectionArbiter.reserveExternal { false })
+        assertFalse(wirelessUp)
+        assertTrue(ConnectionArbiter.refusesBackground(userRequested = false))
+        assertTrue(ConnectionArbiter.refusesBackground(userRequested = true))
+        assertEquals(null, ConnectionArbiter.claim(Tier.USB, Owner.USB, "USB"))
+        advance(180_000) // external sessions must not expire like stale AA attempts
+        assertEquals(null, ConnectionArbiter.claim(Tier.USER, Owner.MANUAL, "AA"))
+        assertTrue(givenBack.isEmpty())
+        ConnectionArbiter.releaseExternal(lease)
+        assertEquals(listOf(true to true), givenBack)
+        ConnectionArbiter.releaseExternal(lease)
+        assertEquals(1, givenBack.size)
+        assertNotNull(ConnectionArbiter.claim(Tier.USER, Owner.MANUAL, "AA"))
+    }
+
     /** Moves the clock and fires every timer that has come due, in order. */
     private fun advance(ms: Long) {
         now += ms

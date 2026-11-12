@@ -59,3 +59,11 @@ APK создаётся в `app/build/outputs/apk/github/debug/`.
 Основано на [Open Headunit](https://github.com/andreknieriem/open-headunit) и исходном [Headunit Майкла Рида](https://github.com/mikereidis/headunit). Лицензия проекта — [GNU AGPL v3](LICENSE); исходные уведомления об авторских правах сохранены. Сторонние компоненты распространяются на условиях своих лицензий.
 
 Проект не связан с Zeekr или Google и не является их официальным продуктом. Android Auto — товарный знак Google.
+
+## Обновление 1.0.4
+
+На главном экране появился общий список USB-устройств и сопряжённых телефонов с выбором устройства и кнопкой подключения. Сопряжение Bluetooth не гарантирует доступность телефона или поддержку проекции. Сохранены отдельные карточки подключения и их анимации.
+
+Прямой CarPlay и CarPlay Ultra — экспериментальные функции. Успешное подключение реального iPhone/TBox и работа на магнитоле пока не подтверждены. Данные аутентификации CarPlay не включены в APK или исходники. Настройки диагностики находятся в разделе подключения.
+
+CarPlay основан на DiPlay и [Tarmac](https://github.com/Altair571/tarmac). Based on LIVI by Lasse Heitgres (https://github.com/f-io/LIVI). Лицензии и уведомления: `carplay/UPSTREAM.txt`, `carplay/LICENSE`, `carplay/docs/licenses/LIVI-NOTICE.txt`.

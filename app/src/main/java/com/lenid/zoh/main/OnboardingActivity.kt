@@ -69,8 +69,7 @@ import kotlinx.coroutines.withContext
  * Intelligent, device-aware first-run wizard. Replaces the old
  * SafetyDisclaimerDialog + SetupWizard dialog chain with a single guided flow.
  *
- * Shown once to everyone (including upgraders) when the stored onboardingVersion
- * is older than CURRENT_ONBOARDING_VERSION, and re-launchable from Settings.
+ * Shown automatically only on a fresh installation, and re-launchable from Settings.
  *
  * Steps: Welcome(+language) / Safety(mandatory) / Connection / Display scan /
  * Appearance / Audio streams / Automation / Car launcher / Location / Ready.
@@ -116,7 +115,7 @@ class OnboardingActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (!OnboardingLaunchPolicy.shouldShow(settings.onboardingVersion,
-                CURRENT_ONBOARDING_VERSION, intent.getBooleanExtra(EXTRA_MANUAL_SETUP, false))) {
+                settings.isUpdatedInstallation, intent.getBooleanExtra(EXTRA_MANUAL_SETUP, false))) {
             AppLog.i("OnboardingActivity: setup already completed; dismissing restored wizard")
             finish()
             return

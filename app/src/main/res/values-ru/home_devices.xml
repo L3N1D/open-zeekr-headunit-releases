@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_devices_title">Устройства</string>
+    <string name="home_devices_subtitle">Выберите устройство для подключения</string>
+    <string name="home_devices_refresh">Обновить устройства</string>
+    <string name="home_device_connect">Подключить</string>
+    <string name="home_devices_hint">Сопряжённый телефон может быть вне зоны связи. Поддержка проекции проверяется при подключении.</string>
+    <string name="home_devices_bluetooth_unavailable">Bluetooth выключен или недоступен. Показаны USB-устройства; беспроводное подключение доступно через карточки справа.</string>
+    <string name="home_devices_empty">Устройства не найдены\nПодключите устройство по USB или выполните сопряжение телефона по Bluetooth.</string>
+    <string name="home_device_unnamed">Телефон</string>
+    <string name="home_device_aa_usb">Android Auto · USB</string>
+    <string name="home_device_aa_wireless">Android Auto · Беспроводное · Сопряжено</string>
+    <string name="home_device_cp_usb">CarPlay · USB</string>
+    <string name="home_device_cp_wireless">CarPlay · Беспроводное · Сопряжено</string>
+    <string name="home_device_dongle">Донгл · USB</string>
+    <string name="home_device_gone">Устройство больше недоступно. Обновите список.</string>
+    <string name="home_device_one_iphone">Оставьте подключённым по USB только выбранный iPhone.</string>
+</resources>

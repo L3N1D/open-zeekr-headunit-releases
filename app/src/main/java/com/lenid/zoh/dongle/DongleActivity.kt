@@ -16,6 +16,10 @@ import android.view.SurfaceView
 import android.view.View
 import android.view.WindowManager
 import android.widget.FrameLayout
+import android.widget.LinearLayout
+import androidx.core.content.ContextCompat
+import com.google.android.material.button.MaterialButton
+import com.lenid.zoh.utils.ConnectionPanel
 import android.widget.TextView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -45,6 +49,9 @@ class DongleActivity : BaseActivity(), SurfaceHolder.Callback, DongleService.Lis
     private var screenW = 0
     private var screenH = 0
     private var surfaceReady = false
+    private lateinit var panel: ConnectionPanel
+    private var exitAnimationFinished = false
+    private var returnHome = false
     private val touchSender = Executors.newSingleThreadExecutor()
 
     private val conn = object : ServiceConnection {
@@ -61,6 +68,8 @@ class DongleActivity : BaseActivity(), SurfaceHolder.Callback, DongleService.Lis
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        @Suppress("DEPRECATION")
+        overridePendingTransition(0, 0)
         settings = DongleSettings(this)
         // Plugged in with "open automatically" off: start the session for its sound, stay where we are.
         if (intent?.action == UsbManager.ACTION_USB_DEVICE_ATTACHED && !settings.autoOpen) {
@@ -73,15 +82,9 @@ class DongleActivity : BaseActivity(), SurfaceHolder.Callback, DongleService.Lis
         root = findViewById(R.id.dongle_root)
         surfaceView = findViewById(R.id.dongle_video)
         overlay = findViewById(R.id.dongle_overlay)
-        statusView = findViewById(R.id.dongle_status)
-        progress = findViewById(R.id.dongle_progress)
         homeSmall = findViewById(R.id.dongle_home_small)
         homeSmall.setOnClickListener { goHome() }
-        findViewById<View>(R.id.dongle_home).setOnClickListener { goHome() }
-        findViewById<View>(R.id.dongle_settings).setOnClickListener {
-            SettingsFragment.openAt(DONGLE_CATEGORY)
-            startActivity(Intent(this, SettingsActivity::class.java))
-        }
+        setupConnectionPanel()
         surfaceView.holder.addCallback(this)
         surfaceView.setOnTouchListener { v, e -> onTouch(v, e) }
         root.addOnLayoutChangeListener { _, l, t, r, b, ol, ot, or, ob ->
@@ -104,9 +107,62 @@ class DongleActivity : BaseActivity(), SurfaceHolder.Callback, DongleService.Lis
         }
     }
 
+    private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
+
+    private fun setupConnectionPanel() {
+        panel = ConnectionPanel(this, R.string.dongle_title, R.string.dongle_panel_subtitle,
+            R.drawable.ic_dongle_white, window) { goHome() }
+        statusView = panel.text(R.string.dongle_plug_in, 24f, true).apply {
+            gravity = Gravity.CENTER
+            minHeight = dp(160)
+            setPadding(dp(24), dp(24), dp(24), dp(24))
+            accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(ContextCompat.getColor(this@DongleActivity, R.color.home_tile))
+                cornerRadius = dp(24).toFloat()
+            }
+        }
+        panel.body.addView(statusView, LinearLayout.LayoutParams(-1, -2))
+        progress = LinearProgressIndicator(this).apply {
+            isIndeterminate = true
+            setIndicatorColor(ContextCompat.getColor(this@DongleActivity, R.color.brand_teal))
+            trackThickness = dp(6); trackCornerRadius = dp(3)
+            visibility = View.INVISIBLE
+        }
+        panel.body.addView(progress, LinearLayout.LayoutParams(-1, dp(6)).apply { topMargin = dp(20) })
+        panel.body.addView(panel.text(R.string.dongle_panel_hint, 16f, true),
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(20); bottomMargin = dp(16) })
+        panel.body.addView(MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+            setText(R.string.dongle_settings); cornerRadius = dp(24)
+            setIconResource(R.drawable.ic_settings_white)
+            iconSize = dp(24)
+            setOnClickListener {
+                SettingsFragment.openAt(DONGLE_CATEGORY)
+                startActivity(Intent(this@DongleActivity, SettingsActivity::class.java))
+            }
+        }, LinearLayout.LayoutParams(-2, -2))
+        (overlay as FrameLayout).addView(panel.root, FrameLayout.LayoutParams(-1, -1))
+    }
+
+    override fun finish() {
+        if (::panel.isInitialized && !exitAnimationFinished && overlay.visibility == View.VISIBLE && !isDestroyed) {
+            panel.dismiss { exitAnimationFinished = true; finish() }
+            return
+        }
+        super.finish()
+        if (returnHome) {
+            startActivity(Intent(this, MainActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP))
+        }
+        @Suppress("DEPRECATION")
+        overridePendingTransition(0, 0)
+    }
+
     override fun onResume() {
         super.onResume()
-        hideSystemUi()
+        window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+        if (!::homeSmall.isInitialized) return
+        updateSystemUi()
         // The AA / CarPlay side rail moves to the right for right-hand drive; keep the button on it.
         (homeSmall.layoutParams as FrameLayout.LayoutParams).gravity =
             Gravity.TOP or if (settings.rightHandDrive) Gravity.END else Gravity.START
@@ -115,11 +171,16 @@ class DongleActivity : BaseActivity(), SurfaceHolder.Callback, DongleService.Lis
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) hideSystemUi()
+        if (hasFocus) updateSystemUi()
     }
 
     @Suppress("DEPRECATION")
-    private fun hideSystemUi() {
+    private fun updateSystemUi() {
+        if (!::overlay.isInitialized || overlay.visibility == View.VISIBLE) {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            return
+        }
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
             View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
             View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
@@ -140,8 +201,7 @@ class DongleActivity : BaseActivity(), SurfaceHolder.Callback, DongleService.Lis
     override fun onBackPressed() = goHome()
 
     private fun goHome() {
-        startActivity(Intent(this, MainActivity::class.java)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP))
+        returnHome = true
         finish()
     }
 
@@ -192,8 +252,14 @@ class DongleActivity : BaseActivity(), SurfaceHolder.Callback, DongleService.Lis
     }
 
     private fun onState(state: DongleService.State) {
-        statusView.text = state.status
+        statusView.text = state.status.ifEmpty { getString(R.string.dongle_plug_in) }
+        panel.setBackgroundVisible(!state.phoneConnected)
+        // Keep the real underlying window visible while choosing a connection. The existing
+        // surface callback reattaches the decoder and requests a keyframe when projection starts.
+        surfaceView.visibility = if (state.phoneConnected) View.VISIBLE else View.INVISIBLE
+        root.setBackgroundColor(if (state.phoneConnected) android.graphics.Color.BLACK else android.graphics.Color.TRANSPARENT)
         overlay.visibility = if (state.phoneConnected) View.GONE else View.VISIBLE
+        updateSystemUi()
         homeSmall.visibility = if (state.phoneConnected) View.VISIBLE else View.GONE
         // Only animate while something is actually in progress.
         progress.visibility = if (state.waitingOnDriver) View.INVISIBLE else View.VISIBLE
