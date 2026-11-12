@@ -1,74 +1,66 @@
-# Privacy Policy for Open Headunit
+# Конфиденциальность Open Zeekr Headunit
 
-> Local build identity: **Open Zeekr Headunit**, package **`com.lenid.zoh`**.
-> The original upstream policy and attribution are preserved below for reference.
+Обновлено: 13 ноября 2026 года.
 
-**Last updated:** September 1, 2026
+Этот документ описывает сборку **Open Zeekr Headunit**, пакет `com.lenid.zoh`,
+которую сопровождает **L3N1D**. Он не описывает политику авторов исходного проекта.
 
-This Privacy Policy applies to the mobile application **Open Headunit** (formerly known as **Headunit Revived**), developed and published by **André Rinas** ("we", "our", or "us").
+- Проект и исходники: https://github.com/L3N1D/open-zeekr-headunit-releases
+- Обратная связь: https://github.com/L3N1D/open-zeekr-headunit-releases/issues
 
-We are committed to protecting your privacy. This document outlines how Open Headunit handles device data and permissions.
+## Проекция и разрешения
 
----
+Приложение принимает изображение и звук с подключённого телефона, передаёт
+команды управления и взаимодействует с поддерживаемыми функциями магнитолы.
+Доступны Android Auto, подключение через совместимый донгл и экспериментальный
+CarPlay. Обработка данных приложениями телефона регулируется правилами их
+разработчиков.
 
-## 1. Developer and Application Identification
+Разрешения используются в зависимости от выбранных функций:
 
-- **Application Name:** Open Headunit (formerly Headunit Revived)
-- **Developer / Publisher:** André Rinas
-- **Contact Email:** headunit@andrerinas.com
-- **Official Website:** https://headunit.andrerinas.com
+- USB, Bluetooth и Wi-Fi — обнаружение устройств и поддержание подключения.
+- Микрофон — передача голоса подключённому устройству при использовании голосовых функций.
+- Местоположение — передача данных GPS в Android Auto при включённой соответствующей настройке.
+- Фоновые службы — поддержание проекции, воспроизведения и подключения.
+- Дополнительные разрешения магнитолы — интеграция с окном карты, темой и мультимедиа
+  на поддерживаемой прошивке.
 
----
+## Настройки и журналы
 
-## 2. No Collection of Personal Data
+Настройки и отчёты диагностики сохраняются локально. Пользователь может включить
+запись журнала и экспортировать его в файл. Экспортированные файлы в общей памяти
+устройства могут остаться после удаления приложения. Перед передачей журнала или
+публикацией в GitHub Issues проверьте его и удалите личные данные. Issues публичны.
 
-**Open Headunit does NOT collect, store, track, sell, or share any personal user data.**
+## Отправка отчётов в Bugsink
 
-The application functions strictly as a display and input receiver for your Android smartphone using the Android Auto Protocol (AAP). All data displayed on the screen (such as navigation maps, music metadata, messages, and contacts) remains on your connected phone and is processed directly by the official Android Auto application installed on that phone, subject to Google's Privacy Policy.
+В официальной версии 1.0.5 подключён сервер `https://lenid.bugsink.com`.
+Существующий механизм диагностики отправляет отчёты в фоновом режиме;
+переключатель «Отправлять отчёты об ошибках» по умолчанию включён.
+Его можно отключить в настройках приложения.
 
----
+Отчёты могут включать:
 
-## 3. Permissions and Sensitive Data Usage
+- ошибки, исключения и стек вызовов;
+- доступные Android сведения о предыдущем завершении процесса или зависании;
+- версию приложения, модель устройства и версию Android;
+- время события и фрагмент журнала перед ошибкой.
 
-Open Headunit requests specific system permissions exclusively to fulfill its core automotive projection functions:
+Это не непрерывная передача полного журнала, изображения проекции или карты.
+Маскирование отдельных полей не гарантирует удаления всех личных данных из
+диагностического текста. Сервер также получает сетевые сведения, необходимые
+для HTTPS-запроса, включая IP-адрес отправителя.
 
-- **Microphone (`RECORD_AUDIO`, `FOREGROUND_SERVICE_MICROPHONE`):**
-  - **Purpose:** Used solely when you initiate a voice query (e.g. Google Assistant, voice commands, or in-car messaging) to capture your voice via the head unit's microphone and stream it in real-time to Android Auto on your phone.
-  - **No Recording or Storage:** Voice audio is streamed directly through the local protocol connection. Open Headunit **never** saves, records to disk, analyzes, or transmits audio data to any third-party or remote server.
-- **Location (`ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`):**
-  - **Purpose:** If the "GPS for Navigation" setting is enabled, Open Headunit reads the vehicle/tablet hardware GPS fix and speed to pass it to Android Auto on your phone, providing more accurate navigation in tunnels or poor reception areas.
-  - **No Tracking:** Location data is processed strictly in real-time. We **never** store, log, track, or share your location or movement history.
-- **Foreground Service (`FOREGROUND_SERVICE_CONNECTED_DEVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, `FOREGROUND_SERVICE_MICROPHONE`):**
-  - Required by Android to maintain the active projection session, audio playback, and temporary microphone capture in the background while in use.
-- **USB / Bluetooth / Wi-Fi (`BLUETOOTH_CONNECT`, `NEARBY_WIFI_DEVICES`, `CHANGE_NETWORK_STATE`):**
-  - Used strictly to discover, pair, and maintain the local hardware connection (USB-OTG, Wi-Fi Direct, or Hotspot) between the head unit and your phone.
+Отключение отправки не удаляет локальные отчёты и уже полученные сервером события.
+Неотправленные отчёты могут быть отправлены при повторном включении настройки.
+Удаление приложения не удаляет ранее отправленные отчёты из Bugsink.
 
----
+В самостоятельно собранном APK адрес сервера задаётся при сборке. При пустом
+`sentry.dsn` отчёты остаются только на устройстве.
 
-## 4. Third-Party Services and Tracking
+## Обновления и обратная связь
 
-- **No Analytics:** Open Headunit contains no analytics SDKs (no Google Analytics, Firebase, or third-party telemetry).
-- **No Advertising:** The application is completely ad-free and contains no advertising libraries.
-- **No Data Sharing:** No device information, usage metrics, or user telemetry is ever shared with or sold to third parties.
-
----
-
-## 5. Data Security and Storage
-
-All application settings, display configurations, and user preferences are stored strictly locally on your device in private application storage (`SharedPreferences`). No user data is ever sent to or stored on external servers. Uninstalling the app removes all stored configuration data immediately.
-
----
-
-## 6. Changes to This Policy
-
-We may update this Privacy Policy from time to time to reflect improvements or regulatory changes. Any updates will be published with a revised "Last updated" date.
-
----
-
-## 7. Contact Us
-
-If you have questions, feedback, or concerns regarding this Privacy Policy or the data practices of **Open Headunit**, please contact:
-
-- **Developer:** André Rinas
-- **Email:** headunit@andrerinas.com
-- **Project Repository:** https://github.com/andreknieriem/open-headunit
+Проверка и загрузка обновлений обращаются к GitHub. Не публикуйте пароли,
+ключи, адреса устройств или другие личные сведения в открытых обращениях.
+По вопросам диагностики и обработки отчётов используйте страницу обратной связи
+проекта; конфиденциальные материалы не прикладывайте к публичному обращению.

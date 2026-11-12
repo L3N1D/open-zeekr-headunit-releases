@@ -18,7 +18,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
  *
  * Informs users about Google's restrictions on third-party wireless triggers
  * and self-mode, directing them to the Headunit Server, Native Mode, or USB Dongle,
- * with a direct link to the guide on the official website.
+ * with a direct link to the installation instructions in this project.
  */
 object Aa174Notice {
 
@@ -55,7 +55,7 @@ object Aa174Notice {
                     settings.aa174NoticeShown = true
                     d.dismiss()
                     try {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://headunit.andrerinas.com/guides/wireless/"))
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/L3N1D/open-zeekr-headunit-releases#установка"))
                         activity.startActivity(intent)
                     } catch (e: Exception) {
                         AppLog.e("Aa174Notice: Failed to launch guide URL: ${e.message}")
