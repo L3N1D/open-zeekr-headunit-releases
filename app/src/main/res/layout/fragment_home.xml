@@ -203,9 +203,11 @@
                     android:id="@+id/updates_button"
                     style="@style/HomeTile.Grid">
                     <ImageView
+                        android:id="@+id/home_update_icon"
                         style="@style/HomeTileIcon.Grid"
                         app:srcCompat="@drawable/ic_refresh_white" />
                     <com.lenid.zoh.view.WordFitTextView
+                        android:id="@+id/home_update_label"
                         style="@style/HomeTileLabel.Grid"
                         android:text="@string/home_updates" />
                 </LinearLayout>

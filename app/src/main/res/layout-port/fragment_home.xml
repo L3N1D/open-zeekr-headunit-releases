@@ -99,6 +99,21 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/updates_button"
+            style="@style/HomeTile"
+            android:layout_width="0dp"
+            android:layout_weight="1">
+            <ImageView
+                android:id="@+id/home_update_icon"
+                style="@style/HomeTileIcon"
+                app:srcCompat="@drawable/ic_refresh_white" />
+            <com.lenid.zoh.view.WordFitTextView
+                android:id="@+id/home_update_label"
+                style="@style/HomeTileLabel.Wrap"
+                android:text="@string/home_updates" />
+        </LinearLayout>
+
+        <LinearLayout
             android:id="@+id/exit_button"
             style="@style/HomeTile"
             android:layout_width="0dp"

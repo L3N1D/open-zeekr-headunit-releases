@@ -1467,7 +1467,7 @@ Open Headunit предоставляется «как есть» без каки
     <string name="update_less">Свернуть</string>
     <string name="update_open_release">Открыть на GitHub</string>
     <string name="update_check_at_start">Проверять при запуске</string>
-    <string name="update_check_at_start_description">Искать новую версию при запуске, когда Android Auto не подключён.</string>
+    <string name="update_check_at_start_description">Проверять автоматически и показывать новые обновления на главном экране.</string>
     <string name="update_send_reports">Отправлять отчёты об ошибках</string>
     <string name="update_send_reports_description">Падения и ошибки вместе с журналом перед ними уходят разработчику. Координаты и адреса устройств скрыты.</string>
     <!-- Быстрые действия на главном экране -->
@@ -1478,6 +1478,7 @@ Open Headunit предоставляется «как есть» без каки
     <string name="launcher_card_myregion_title">MyRegion может вернуть карточку</string>
     <string name="launcher_card_myregion_message">На магнитоле установлен MyRegion — его настройка «Приложение навигации» перезаписывает карточку на главном экране. Откройте MyRegion → Настройки мультимедиа → Приложение навигации и выберите «Ничего», иначе карточка переключится с Android Auto.</string>
     <string name="launcher_card_myregion_enable">Всё равно включить</string>
+    <string name="home_new_update">Новое обновление</string>
     <string name="home_updates">Обновления</string>
     <string name="hud_map_missing_title">Zeekr HUD Map не установлена</string>
     <string name="hud_map_missing_message">Она выводит карту Android Auto на проекционный экран. Скачать и установить её сейчас? Android попросит подтвердить установку.</string>

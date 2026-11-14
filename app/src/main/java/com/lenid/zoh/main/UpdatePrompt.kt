@@ -5,7 +5,8 @@ import android.content.Context
 import android.widget.Toast
 import com.lenid.zoh.App
 import com.lenid.zoh.R
-import com.lenid.zoh.utils.AppLog
+import androidx.lifecycle.MutableLiveData
+import com.lenid.zoh.BuildConfig
 import com.lenid.zoh.utils.ToastUtils
 import com.lenid.zoh.utils.UpdateChecker
 import com.lenid.zoh.utils.UpdateInfo
@@ -16,15 +17,17 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/**
- * "An update is out": offers to download the release APK and open the system installer from
- * here, for "Check for updates" and for the check at start. Installing restarts the app, which
- * drops Android Auto, so it is offered only while nothing is connected.
- */
 object UpdatePrompt {
 
-    /** Checked once per process at start (see [checkAtStart]). */
-    private var checkedAtStart = false
+    private val availability = MutableLiveData<Boolean>()
+    private var checking = false
+    private var lastAttempt: Long? = null
+
+    fun observeAvailability(context: Context, owner: androidx.lifecycle.LifecycleOwner, render: (Boolean) -> Unit) {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        render(prefs.getString("update_for_version", null) == BuildConfig.VERSION_NAME)
+        availability.observe(owner) { render(it) }
+    }
 
     private const val PREFS = "updates"
     private const val AT_START = "check_at_start"
@@ -40,22 +43,24 @@ object UpdatePrompt {
     fun lastCheck(context: Context) =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getLong(LAST_CHECK, 0L)
 
-    fun noteChecked(context: Context) =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putLong(LAST_CHECK, System.currentTimeMillis()).apply()
+    fun noteChecked(context: Context, info: UpdateInfo) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putLong(LAST_CHECK, System.currentTimeMillis())
+            .putString("update_for_version", if (info.isUpdateAvailable) BuildConfig.VERSION_NAME else null)
+            .apply()
+        availability.value = info.isUpdateAvailable
+    }
 
-    /** Quietly, once: a dialog only when there is an update and Android Auto is not connected. */
-    fun checkAtStart(activity: Activity, scope: CoroutineScope) {
-        if (checkedAtStart || UpdateChecker.isPlayStoreInstallation(activity)) return
-        if (!checkAtStartEnabled(activity)) return
-        if (App.provide(activity).commManager.isConnected) return
-        checkedAtStart = true
-        scope.launch {
-            val info = UpdateChecker.check(activity).getOrNull() ?: return@launch
-            noteChecked(activity)
-            if (!info.isUpdateAvailable || activity.isFinishing) return@launch
-            if (App.provide(activity).commManager.isConnected) return@launch
-            AppLog.i("UpdatePrompt: ${info.latestVersionName} is out (installed ${info.currentVersionName})")
-            show(activity, info, scope)
+    suspend fun checkAutomatically(activity: Activity) {
+        if (checking || !checkAtStartEnabled(activity) || UpdateChecker.isPlayStoreInstallation(activity)) return
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (lastAttempt?.let { now - it < 60_000L } == true) return
+        lastAttempt = now
+        checking = true
+        try {
+            UpdateChecker.check(activity).onSuccess { noteChecked(activity, it) }
+        } finally {
+            checking = false
         }
     }
 

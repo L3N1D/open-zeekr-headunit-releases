@@ -244,6 +244,12 @@ class HomeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        val updateIcon = view.findViewById<ImageView>(R.id.home_update_icon)
+        val updateLabel = view.findViewById<TextView>(R.id.home_update_label)
+        UpdatePrompt.observeAvailability(requireContext(), viewLifecycleOwner) { available ->
+            updateIcon.setImageResource(if (available) R.drawable.ic_update_available else R.drawable.ic_refresh_white)
+            updateLabel.setText(if (available) R.string.home_new_update else R.string.home_updates)
+        }
         renderHome()
 
         activity?.findViewById<View>(R.id.status_notices)?.let { notices ->

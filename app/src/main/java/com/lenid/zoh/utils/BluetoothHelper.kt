@@ -516,7 +516,12 @@ object BluetoothHelper {
                 }
             }
         } catch (e: Exception) {
-            AppLog.e("BluetoothHelper: Failed to list bluetooth services from ServiceManager: ${e.message}", e)
+            // Service enumeration is optional; stock Android can deny it even with Bluetooth permission.
+            if (e is SecurityException || (e is java.lang.reflect.InvocationTargetException && e.targetException is SecurityException)) {
+                AppLog.i("BluetoothHelper: vendor service enumeration unavailable to this app")
+            } else {
+                AppLog.e("BluetoothHelper: Failed to list bluetooth services from ServiceManager: ${e.message}", e)
+            }
         }
 
         if (!bluetoothServices.contains("bluetooth_manager")) {

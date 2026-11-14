@@ -4657,6 +4657,7 @@ class SettingsFragment : Fragment() {
 
             result.fold(
                 onSuccess = { info ->
+                    UpdatePrompt.noteChecked(ctx, info)
                     if (info.isUpdateAvailable) {
                         if (info.isPlayStore) {
                             MaterialAlertDialogBuilder(ctx, R.style.DarkAlertDialog)

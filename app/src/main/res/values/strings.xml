@@ -1645,7 +1645,7 @@
     <string name="update_less">Less</string>
     <string name="update_open_release">Open on GitHub</string>
     <string name="update_check_at_start">Check at start</string>
-    <string name="update_check_at_start_description">Look for a new version when the app starts and Android Auto is not connected.</string>
+    <string name="update_check_at_start_description">Check automatically and show new updates on the home screen.</string>
     <string name="update_send_reports">Send error reports</string>
     <string name="update_send_reports_description">Crashes and errors, with the log lines before them, go to the developer. Locations and device addresses are masked.</string>
     <!-- Home quick actions -->
@@ -1656,6 +1656,7 @@
     <string name="launcher_card_myregion_title">MyRegion can take the card back</string>
     <string name="launcher_card_myregion_message">MyRegion is installed on this head unit, and its own "navigation app" setting rewrites the home screen card. Open MyRegion → Multimedia settings → Navigation app and choose "Nothing", otherwise the card will switch away from Android Auto.</string>
     <string name="launcher_card_myregion_enable">Enable anyway</string>
+    <string name="home_new_update">New update</string>
     <string name="home_updates">Updates</string>
     <string name="hud_map_missing_title">Zeekr HUD Map is not installed</string>
     <string name="hud_map_missing_message">It shows the Android Auto map on the head-up display. Download and install it now? Android asks you to confirm.</string>

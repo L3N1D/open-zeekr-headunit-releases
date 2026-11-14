@@ -178,6 +178,14 @@ class MainActivity : BaseActivity() {
         }
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                while (true) {
+                    UpdatePrompt.checkAutomatically(this@MainActivity)
+                    delay(15 * 60_000L)
+                }
+            }
+        }
         if (Build.VERSION.SDK_INT >= 26) {
             lifecycleScope.launch {
                 repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -1264,8 +1272,6 @@ class MainActivity : BaseActivity() {
     override fun onResume() {
         super.onResume()
         if (!App.provide(this).commManager.isConnected) window.decorView.alpha = 1f
-        // A newer release on GitHub is offered once per start, never while Android Auto is up.
-        UpdatePrompt.checkAtStart(this, lifecycleScope)
         SettingsActivity.onMainScreenResumed()
         val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
         window.peekDecorView()?.let { v ->

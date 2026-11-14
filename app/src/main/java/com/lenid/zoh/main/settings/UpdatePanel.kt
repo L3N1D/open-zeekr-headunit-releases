@@ -78,7 +78,7 @@ class UpdatePanel(private val fragment: Fragment) {
         fragment.lifecycleScope.launch {
             val result = UpdateChecker.check(context)
             result.onSuccess {
-                UpdatePrompt.noteChecked(context)
+                UpdatePrompt.noteChecked(context, it)
                 info = it
                 status = if (it.isUpdateAvailable) Status.AVAILABLE else Status.LATEST
             }.onFailure {
