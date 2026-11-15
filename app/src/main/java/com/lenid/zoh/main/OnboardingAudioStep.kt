@@ -1,6 +1,7 @@
 package com.lenid.zoh.main
 
 import android.content.Context
+import com.lenid.zoh.decoder.audio.CarAudioPlatform
 import android.media.AudioManager
 import android.os.Bundle
 import android.util.TypedValue
@@ -335,14 +336,16 @@ class OnboardingAudioStep(
         // the stream the amplifier unmutes is the setting that achieves it; the advanced
         // switches can split them again afterwards.
         settings.mediaAudioStream = row.stream
-        settings.guidanceAudioStream = row.stream
-        settings.systemAudioStream = row.stream
-        settings.separateAudioStreams = false
+        val nativeRoutes = CarAudioPlatform.hasZeekrAudioRoutes &&
+            row.stream == AudioManager.STREAM_MUSIC
+        settings.guidanceAudioStream = if (nativeRoutes) CarAudioPlatform.NAVIGATION_STREAM else row.stream
+        settings.systemAudioStream = if (nativeRoutes) AudioManager.STREAM_NOTIFICATION else row.stream
+        settings.separateAudioStreams = nativeRoutes
         // The channels were heard through the standard output. Keep the projection on it, or
         // AAudio could still carry music on the very stream that was just picked.
         settings.useAAudioOutput = false
         binding = true
-        separateSwitch.isChecked = false
+        separateSwitch.isChecked = nativeRoutes
         aaudioSwitch.isChecked = false
         binding = false
         aaudioStatus.isVisible = false

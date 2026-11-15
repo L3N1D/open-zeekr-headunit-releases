@@ -30,10 +30,15 @@ internal class AapMessageHandlerType(
     )
     private val aapNavigation = AapNavigation(context, settings, presentation)
 
+    private val incomingCall = ZeekrIncomingCall(context)
+
     override fun close() {
         presentationSession.retire()
         presentation.close {
-            try { aapNavigation.close() }
+            try {
+                incomingCall.update(null)
+                aapNavigation.close()
+            }
             finally { onAaPresentationClosed?.invoke(presentationSession) }
         }
     }
@@ -117,6 +122,17 @@ internal class AapMessageHandlerType(
                 if (AudioMediaPayload.requiresAck(msgType)) {
                     transport.sendMediaAck(message.channel, sessionId)
                 }
+            }
+            return
+        }
+
+        if (message.channel == Channel.ID_PHONE && msgType == 0x8001) {
+            try {
+                val snapshot = message.parse(com.lenid.zoh.aap.protocol.proto.Control.Service.PhoneStatusService.newBuilder()).build()
+                val caller = ClusterCall.from(snapshot)
+                presentation.submit(PresentationQueue.Slot.PHONE) { incomingCall.update(caller) }
+            } catch (_: com.google.protobuf.InvalidProtocolBufferException) {
+                AppLog.w("Malformed AA phone status")
             }
             return
         }

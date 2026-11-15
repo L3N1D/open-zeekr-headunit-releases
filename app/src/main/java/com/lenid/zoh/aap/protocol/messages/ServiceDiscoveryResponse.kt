@@ -325,6 +325,10 @@ internal class ServiceDiscoveryResponse(context: Context, audioConfig: AudioSess
                 service.mediaPlaybackService = Control.Service.MediaPlaybackStatusService.newBuilder().build()
             }.build()
             services.add(mediaPlaybackStatus)
+            if (com.lenid.zoh.aap.ZeekrIncomingCall.supported(context)) {
+                services.add(Control.Service.newBuilder().setId(Channel.ID_PHONE)
+                    .setPhoneStatusService(Control.Service.PhoneStatusService.getDefaultInstance()).build())
+            }
 
             // Navigation Status Service — head unit receives turn-by-turn data from any AA nav app
             val navigationStatus = Control.Service.newBuilder().also { service ->

@@ -16,6 +16,15 @@ internal object CarAudioPlatform {
 
     val isCarPlatform: Boolean by lazy { detect() }
 
+    // Stream and usage verified in the audio policy on the Zeekr QTI head unit.
+    const val NAVIGATION_STREAM = 15
+    val hasZeekrAudioRoutes by lazy {
+        Build.DEVICE == "msmnile_gvmq" && try {
+            Class.forName("android.app.systemHMI.SystemHMIManager", false, javaClass.classLoader)
+            true
+        } catch (_: ClassNotFoundException) { false }
+    }
+
     private fun detect(): Boolean {
         val fingerprint = listOf(
             Build.MANUFACTURER, Build.BRAND, Build.HARDWARE, Build.PRODUCT,

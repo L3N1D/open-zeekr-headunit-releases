@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.hardware.usb.UsbDevice
 import android.location.Location
 import android.media.AudioManager
+import com.lenid.zoh.decoder.audio.CarAudioPlatform
 import android.os.Build
 import com.lenid.zoh.input.KeyCode
 import com.lenid.zoh.main.FavoriteAppsPolicy
@@ -40,7 +41,19 @@ class Settings(private val context: Context) {
 
     private val _prefs: SharedPreferences? by lazy {
         try {
-            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).also { saved ->
+                if (CarAudioPlatform.hasZeekrAudioRoutes && !saved.contains("zeekr-audio-routes-v1")) {
+                    val migration = saved.edit()
+                    // The previous guided setup wrote this exact preset when the media test succeeded.
+                    if (!saved.getBoolean("separate-audio-streams", false) &&
+                        listOf("media-audio-stream", "guidance-audio-stream", "system-audio-stream").all {
+                            saved.getInt(it, -1) == AudioManager.STREAM_MUSIC
+                        }) {
+                        migration.remove("separate-audio-streams").remove("guidance-audio-stream").remove("system-audio-stream")
+                    }
+                    migration.putBoolean("zeekr-audio-routes-v1", true).apply()
+                }
+            }
         } catch (e: Exception) {
             null
         }
@@ -1270,7 +1283,7 @@ class Settings(private val context: Context) {
         set(value) { prefs.edit().putInt("media-key-routing", value.value).apply() }
 
     var separateAudioStreams: Boolean
-        get() = prefs.getBoolean("separate-audio-streams", false)
+        get() = prefs.getBoolean("separate-audio-streams", CarAudioPlatform.hasZeekrAudioRoutes)
         set(value) { prefs.edit().putBoolean("separate-audio-streams", value).apply() }
 
     // Which system stream each Android Auto audio channel is played on, stored as the
@@ -1291,7 +1304,7 @@ class Settings(private val context: Context) {
         set(value) { prefs.edit().putInt("media-audio-stream", value).apply() }
 
     var guidanceAudioStream: Int
-        get() = prefs.getInt("guidance-audio-stream", AudioManager.STREAM_VOICE_CALL)
+        get() = prefs.getInt("guidance-audio-stream", if (CarAudioPlatform.hasZeekrAudioRoutes) CarAudioPlatform.NAVIGATION_STREAM else AudioManager.STREAM_VOICE_CALL)
         set(value) { prefs.edit().putInt("guidance-audio-stream", value).apply() }
 
     var systemAudioStream: Int

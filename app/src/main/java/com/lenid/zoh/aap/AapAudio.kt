@@ -1,5 +1,6 @@
 package com.lenid.zoh.aap
 
+import com.lenid.zoh.decoder.audio.CarAudioPlatform
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
@@ -211,6 +212,8 @@ internal class AapAudio(
                 val usage = when (stream) {
                     AudioManager.STREAM_NOTIFICATION -> AudioAttributes.USAGE_NOTIFICATION
                     AudioManager.STREAM_VOICE_CALL -> AudioAttributes.USAGE_VOICE_COMMUNICATION
+                    CarAudioPlatform.NAVIGATION_STREAM -> if (CarAudioPlatform.hasZeekrAudioRoutes)
+                        AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE else AudioAttributes.USAGE_MEDIA
                     else -> AudioAttributes.USAGE_MEDIA
                 }
 
@@ -449,8 +452,12 @@ internal class AapAudio(
         val codec = fromSetup ?: defaultCodec
         val codecSource = if (fromSetup != null) "setup" else "setting"
         AppLog.i("AudioDecoder.start: channel=$channel, stream=$stream, gain=$gain, sampleRate=${config.sampleRate}, numberOfBits=${config.numberOfBits}, numberOfChannels=${config.numberOfChannels}, codec=$codec, source=$codecSource, latencyMultiplier=$effectiveMultiplier, queueCapacity=$audioQueueCapacity, attachHwDspEqualizer=$attachHwDspEqualizer")
+        // Static focus can keep the media mixer alive. Sending navigation through that
+        // same mixer would give its PCM the media track's attributes and volume group.
+        val shareStaticMixer = staticAudioFocus &&
+            !(CarAudioPlatform.hasZeekrAudioRoutes && separateAudioStreams && stream != mediaAudioStream)
         audioDecoder.start(channel, stream, config.sampleRate, config.numberOfBits, config.numberOfChannels,
-            codec.isAac, gain, effectiveMultiplier, audioQueueCapacity, staticAudioFocus, attachHwDspEqualizer,
+            codec.isAac, gain, effectiveMultiplier, audioQueueCapacity, shareStaticMixer, attachHwDspEqualizer,
             preferAAudio = settings.useAAudioOutput, isAdts = codec == AudioSinkCodec.AAC_LC_ADTS, session = decoderSession)
         if (announcePlayback) audioDecoder.getTrack(channel, decoderSession)?.let {
             onAudioPlaybackStarted(channel, it.playbackOwner)

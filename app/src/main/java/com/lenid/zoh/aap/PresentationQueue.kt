@@ -11,7 +11,7 @@ internal class PresentationQueue(
     private val cancel: (Runnable) -> Unit,
     private val onError: (Throwable) -> Unit,
 ) {
-    enum class Slot { METADATA, PLAYBACK, NAV_NOTIFICATION, NAV_BROADCAST }
+    enum class Slot { METADATA, PLAYBACK, NAV_NOTIFICATION, NAV_BROADCAST, PHONE }
 
     private class Pending(var action: () -> Unit) { lateinit var runnable: Runnable }
     private val lock = Any()

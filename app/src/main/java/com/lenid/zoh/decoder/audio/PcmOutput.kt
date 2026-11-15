@@ -70,7 +70,11 @@ internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean) : PcmOutpu
                 // On car platforms media must reach the amplifier's media bus with its DSP tuning,
                 // which a low-latency track or an untyped legacy stream does not.
                 val carMedia = CarAudioPlatform.isCarPlatform && stream == android.media.AudioManager.STREAM_MUSIC
-                val attributes = if (carMedia) {
+                val carNavigation = stream == CarAudioPlatform.NAVIGATION_STREAM && CarAudioPlatform.hasZeekrAudioRoutes
+                val attributes = if (carNavigation) {
+                    AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build()
+                } else if (carMedia) {
                     AudioAttributes.Builder()
                         .setUsage(AudioAttributes.USAGE_MEDIA)
                         .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
@@ -83,7 +87,7 @@ internal class AudioTrackPcmOutput(stream: Int, attachHwDsp: Boolean) : PcmOutpu
                     .setAudioFormat(AudioFormat.Builder().setSampleRate(48000)
                         .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO).setEncoding(AudioFormat.ENCODING_PCM_16BIT).build())
                     .setTransferMode(AudioTrack.MODE_STREAM).setBufferSizeInBytes(requestedBytes)
-                if (Build.VERSION.SDK_INT >= 26 && !attachHwDsp && !carMedia) builder.setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
+                if (Build.VERSION.SDK_INT >= 26 && !attachHwDsp && !carMedia && !carNavigation) builder.setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
                 return builder.build()
             } catch (_: IllegalArgumentException) {
                 // AudioAttributes has no public usage mapping for some legacy stream ids,
