@@ -30,13 +30,14 @@ internal class AapMessageHandlerType(
     )
     private val aapNavigation = AapNavigation(context, settings, presentation)
 
+    private var lastPhoneState: String? = null
     private val incomingCall = ZeekrIncomingCall(context)
 
     override fun close() {
         presentationSession.retire()
         presentation.close {
             try {
-                incomingCall.update(null)
+                incomingCall.close()
                 aapNavigation.close()
             }
             finally { onAaPresentationClosed?.invoke(presentationSession) }
@@ -129,7 +130,16 @@ internal class AapMessageHandlerType(
         if (message.channel == Channel.ID_PHONE && msgType == 0x8001) {
             try {
                 val snapshot = message.parse(com.lenid.zoh.aap.protocol.proto.Control.Service.PhoneStatusService.newBuilder()).build()
+                AppLog.i("AA call snapshot states/seconds: " + snapshot.callsList.joinToString { call ->
+                    val seconds = if (call.hasCallDurationSeconds()) call.callDurationSeconds.toString() else "absent"
+                    "${call.state.number}/$seconds"
+                })
                 val caller = ClusterCall.from(snapshot)
+                val state = caller?.state?.name ?: "IDLE"
+                if (lastPhoneState != state) {
+                    AppLog.i("AA phone status received: $state")
+                    lastPhoneState = state
+                }
                 presentation.submit(PresentationQueue.Slot.PHONE) { incomingCall.update(caller) }
             } catch (_: com.google.protobuf.InvalidProtocolBufferException) {
                 AppLog.w("Malformed AA phone status")
