@@ -1,3 +1,9 @@
+## 1.0.10 — 2026-11-18
+
+- Added a protected call-state feed for Zeekr HUD Map 1.0.6: caller identity, dialing/ringing/active/held states and call duration.
+- Added periodic delivery and an explicit end event so the companion can recover after restart and clear stale call cards.
+- Existing native cluster call handling, projection transport and widget transitions are unchanged.
+
 # Changelog
 
 ### Open Zeekr Headunit 1.0.3 — 2026-11-11

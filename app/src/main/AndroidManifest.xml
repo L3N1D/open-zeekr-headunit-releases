@@ -8,6 +8,8 @@
 
     <permission android:name="${applicationId}.USB_PERMISSION_RESULT" android:protectionLevel="signature" />
     <uses-permission android:name="${applicationId}.USB_PERMISSION_RESULT" />
+    <permission android:name="com.lenid.zoh.permission.SEND_CALL_STATE" android:protectionLevel="signature" />
+    <uses-permission android:name="com.lenid.zoh.permission.SEND_CALL_STATE" />
     <queries>
         <package android:name="moe.shizuku.privileged.api" />
         <!-- OH Route Map: its "feed GMC" switch (GmcGuidanceBridge) -->

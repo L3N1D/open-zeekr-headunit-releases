@@ -54,7 +54,11 @@ internal class ZeekrIncomingCall(
         { task, delay -> main.value.postDelayed(task, delay) },
         { task -> if (main.isInitialized()) main.value.removeCallbacks(task) },
         { call -> publish(context, call) }
-    ) { appContext = context.applicationContext }
+    ) {
+        appContext = context.applicationContext
+        hudPublisher = HudCallPublisher(context.applicationContext ?: context)
+    }
+    private var hudPublisher: HudCallPublisher? = null
     private var appContext: Context? = null
     private var registered = false
     private var aa: ClusterCall? = null
@@ -103,6 +107,7 @@ internal class ZeekrIncomingCall(
         registered = false
         appContext = null
         update(null)
+        hudPublisher = null
     }
 
     private var displayed: ClusterCall? = null
@@ -151,6 +156,7 @@ internal class ZeekrIncomingCall(
     }
 
     private fun deliver(next: ClusterCall?) {
+        hudPublisher?.update(next)
         if (next == displayed) return
         if (send(next)) {
             if (displayed?.state != next?.state) AppLog.i("Cluster call accepted: " + (next?.state?.name ?: "IDLE"))
