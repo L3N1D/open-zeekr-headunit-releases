@@ -1,3 +1,8 @@
+## 1.0.11 — 2026-11-19
+
+- Crash reports retain the app version and build in which they were recorded, including reports uploaded after an update.
+- Historical process exits without a known original version are no longer attributed to the uploading build.
+
 ## 1.0.10 — 2026-11-18
 
 - Added a protected call-state feed for Zeekr HUD Map 1.0.6: caller identity, dialing/ringing/active/held states and call duration.

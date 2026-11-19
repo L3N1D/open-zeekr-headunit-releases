@@ -189,10 +189,12 @@ object CrashJournal {
     /** A message without what changes between occurrences, so they count as one. */
     internal fun template(s: String) = Regex("\\d+").replace(mask(s), "#").take(160)
 
-    private fun header(context: Context, title: String) = buildString {
+    private fun header(context: Context, title: String, appVersionKnown: Boolean = true) = buildString {
         append(title).append('\n')
-        append("App: ").append(BuildConfig.VERSION_NAME).append(" (").append(BuildConfig.VERSION_CODE)
-            .append(", ").append(BuildConfig.GIT_SHA).append(")\n")
+        if (appVersionKnown) {
+            append("App: ").append(BuildConfig.VERSION_NAME).append(" (").append(BuildConfig.VERSION_CODE)
+                .append(", ").append(BuildConfig.GIT_SHA).append(")\n")
+        } else append("App: unknown (historical process exit)\n")
         append("Device: ").append(Build.MANUFACTURER).append(' ').append(Build.MODEL)
             .append(", Android ").append(Build.VERSION.RELEASE).append('\n')
         append("Time: ").append(stamp(System.currentTimeMillis())).append("\n\n")
@@ -232,7 +234,7 @@ object CrashJournal {
             val trace = if (x.reason == ApplicationExitInfo.REASON_ANR) {
                 try { x.traceInputStream?.use { String(it.readBytes().take(64 * 1024).toByteArray()) } } catch (_: Exception) { null }
             } else null
-            write(context, kind, header(context, "Last exit: $kind (${x.description ?: "no description"})") +
+            write(context, kind, header(context, "Last exit: $kind (${x.description ?: "no description"})", appVersionKnown = false) +
                 "Exited: ${stamp(x.timestamp)}, process ${x.processName}, importance ${x.importance}, " +
                 "pss ${x.pss} kB, rss ${x.rss} kB\n\n" + (trace ?: ""))
         }
@@ -280,6 +282,7 @@ object CrashJournal {
 
     private fun event(file: File, extra: JSONObject?): JSONObject {
         val text = file.readText()
+        val recordedVersion = CrashReportVersion.fromReport(text)
         val kind = file.name.substringAfterLast('-').removeSuffix(".txt")
         // Reports kept by 1.0.1 have the bare exception beside them.
         val exception = if (extra?.has("type") == true) extra else extra?.optJSONObject("exception")
@@ -289,10 +292,17 @@ object CrashJournal {
             put("timestamp", iso.format(Date(file.lastModified())))
             put("platform", "java")
             put("level", when (kind) { "crash", "native", "anr" -> "fatal"; else -> "error" })
-            put("release", "open-zeekr-headunit@${BuildConfig.VERSION_NAME}")
+            recordedVersion?.let {
+                put("release", it.release)
+                put("dist", it.code)
+            }
             put("environment", BuildConfig.BUILD_TYPE)
             put("tags", JSONObject().put("kind", kind).put("device", "${Build.MANUFACTURER} ${Build.MODEL}")
-                .put("android", Build.VERSION.RELEASE).apply { extra?.optString("origin")?.takeIf { it.isNotEmpty() }?.let { put("origin", it) } })
+                .put("android", Build.VERSION.RELEASE)
+                .put("app_version", recordedVersion?.name ?: "unknown")
+                .put("version_code", recordedVersion?.code ?: "unknown")
+                .apply { recordedVersion?.revision?.let { put("git_revision", it) } }
+                .apply { extra?.optString("origin")?.takeIf { it.isNotEmpty() }?.let { put("origin", it) } })
             if (exception != null) put("exception", JSONObject().put("values", JSONArray().put(exception)))
             put("message", JSONObject().put("formatted",
                 extra?.optString("message")?.takeIf { it.isNotEmpty() } ?: text.lineSequence().firstOrNull().orEmpty()))
