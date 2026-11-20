@@ -1505,6 +1505,14 @@ class CommManager(
         return true
     }
 
+    /** A single gain request; preserves any existing focus cycle and never arms recovery escalation. */
+    fun requestPictureRefresh(): Boolean {
+        if (projectionVideoFocusSuppressed || _connectionState.value !is ConnectionState.TransportStarted) return false
+        val transport = _transport ?: return false
+        transport.send(com.lenid.zoh.aap.protocol.messages.VideoFocusEvent(gain = true, unsolicited = true))
+        return true
+    }
+
     /** Regain focus for the current transport during wake/resume; warm relaunch uses its cycle token. */
     fun retakeVideoFocusForKeyframe() {
         if (projectionVideoFocusSuppressed) return

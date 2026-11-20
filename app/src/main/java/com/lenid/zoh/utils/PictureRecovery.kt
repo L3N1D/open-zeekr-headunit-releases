@@ -14,7 +14,7 @@ object PictureRecovery {
         val app = App.provide(context)
         val decoder = app.videoDecoder
         val accepted = if (app.commManager.isConnected && decoder.hasPictureSurface()) {
-            decoder.onFrameDropped?.let { it(); true } ?: false
+            app.commManager.requestPictureRefresh()
         } else DirectCarPlayService.refreshCurrentPicture()
         if (accepted) { lastRequest = now; ConnectionJournal.record(context, "picture:requested") }
         return accepted
