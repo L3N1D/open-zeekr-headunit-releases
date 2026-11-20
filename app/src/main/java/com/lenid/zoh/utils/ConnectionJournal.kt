@@ -24,7 +24,15 @@ object ConnectionJournal {
             }
         }
         scope.launch {
-            App.provide(app).commManager.connectionState.map { it.javaClass.simpleName }.distinctUntilChanged().collect {
+            App.provide(app).commManager.connectionState.map { when(it) {
+                is CommManager.ConnectionState.Disconnected -> "Disconnected"
+                CommManager.ConnectionState.Connecting -> "Connecting"
+                CommManager.ConnectionState.Connected -> "Connected"
+                CommManager.ConnectionState.StartingTransport -> "StartingTransport"
+                CommManager.ConnectionState.HandshakeComplete -> "HandshakeComplete"
+                CommManager.ConnectionState.TransportStarted -> "TransportStarted"
+                is CommManager.ConnectionState.Error -> "Error"
+            } }.distinctUntilChanged().collect {
                 record(app, "AA:$it")
             }
         }
