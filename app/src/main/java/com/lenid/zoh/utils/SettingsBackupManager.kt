@@ -52,6 +52,9 @@ object SettingsBackupManager {
     }
 
     internal val backupKeys = linkedMapOf(
+        "driver-profiles" to ValueType.STRING,
+        "support-quick-action" to ValueType.INT,
+        "support-wake-picture" to ValueType.BOOLEAN,
         "allow-devices" to ValueType.STRING_SET,
         "network-addresses" to ValueType.STRING_SET,
         "bt-address" to ValueType.STRING,

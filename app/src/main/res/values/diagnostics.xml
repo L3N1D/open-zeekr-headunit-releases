@@ -1,0 +1,24 @@
+<resources>
+    <string name="problem_report_title">Report a problem</string>
+    <string name="problem_report_save">Save report</string>
+    <string name="problem_report_send_notice">The report includes these parameters and recent app logs. It will be queued for Bugsink according to your reporting setting. It contains no screenshot. Logs may contain personal data.</string>
+    <string name="problem_report_local_notice">The report and recent app logs will be saved locally. Uploading is disabled or not configured. Enabling reporting later may upload saved reports.</string>
+    <string name="problem_report_saved">Report saved on this device. Server delivery is not yet confirmed.</string>
+    <string name="problem_report_failed">Could not save the report.</string>
+    <string name="connection_summary_idle">Waiting for a device — select a connection</string>
+    <string name="connection_summary_error">Android Auto: connection error — save a report</string>
+    <string name="connection_summary_video">Android Auto: connected, video has been received</string>
+    <string name="connection_summary_wait_video">Android Auto: connected, waiting for video</string>
+    <string name="diagnostics_window">Home window: %1$d × %2$d px</string>
+    <string name="diagnostics_selected_fps">Selected frame rate: %1$d FPS</string>
+    <string name="diagnostics_announced_fps">Advertised AA frame rate: %1$s FPS</string>
+    <string name="diagnostics_cap">Protective rate reduction: %1$s</string>
+    <string name="diagnostics_cap_yes">active (wireless profile protection)</string>
+    <string name="diagnostics_cap_no">not applied</string>
+    <string name="diagnostics_video_rates">Decoder input: %1$d FPS; render output: %2$d FPS</string>
+    <string name="diagnostics_sample_age">Last sample: %1$d seconds ago</string>
+    <string name="diagnostics_no_sample">No frame-rate sample for this connection yet.</string>
+    <string name="diagnostics_fps_note">Decoder statistics are not a measurement of the physical display refresh rate. Returning home can pause video output.</string>
+    <string name="problem_report_note">What happened? (optional, no personal data)</string>
+    <string name="diagnostics_cap_recovery">recovery after sessions without video</string>
+</resources>

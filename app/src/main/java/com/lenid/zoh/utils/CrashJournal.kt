@@ -96,6 +96,7 @@ object CrashJournal {
      */
     fun onLog(priority: Int, msg: String, tr: Throwable?) {
         if (priority < Log.INFO) return
+        ProjectionDiagnostics.onLog(msg, System.nanoTime() / 1_000_000)
         val slot = (trailNext.getAndIncrement() % TRAIL).toInt()
         trailTimes[slot] = System.currentTimeMillis()
         trailLevels[slot] = if (priority >= Log.ERROR) 'E' else if (priority == Log.WARN) 'W' else 'I'
@@ -240,6 +241,44 @@ object CrashJournal {
         }
         if (newest != since) prefs.edit().putLong(LAST_EXIT, newest).apply()
     }
+
+    /** Capture at the user's click; disk/network work stays on the journal worker. */
+    fun reportProblem(context: Context, snapshot: String, category: String, complete: (Boolean) -> Unit) {
+        val ctx = context.applicationContext
+        val crumbs = trail()
+        val text = mask(snapshot)
+        worker.execute {
+            val saved = try {
+                val title = "User report: $category"
+                write(ctx, "user", header(ctx, title) + text + trailText(crumbs),
+                    JSONObject().put("message", title).put("breadcrumbs", crumbs)
+                        .put("fingerprint", JSONArray().put("user-report").put(category)))
+                true
+            } catch (_: Exception) { false }
+            android.os.Handler(android.os.Looper.getMainLooper()).post { complete(saved) }
+            if (saved) try { upload(ctx) } catch (_: Exception) { /* Retained locally for retry. */ }
+        }
+    }
+
+    /** A local bookmark retains the original build and time even if submitted after an update. */
+    fun captureProblem(context: Context, snapshot: String): String =
+        header(context.applicationContext, "User report: marked-problem") + mask(snapshot) + trailText(trail())
+
+    fun reportCapturedProblem(context: Context, report: String, complete: (Boolean) -> Unit) {
+        val ctx = context.applicationContext
+        worker.execute {
+            val saved = try {
+                require(CrashReportVersion.fromReport(report) != null)
+                write(ctx, "user", report, JSONObject().put("message", "User report: marked-problem")
+                    .put("fingerprint", JSONArray().put("user-report").put("marked-problem")))
+                true
+            } catch (_: Exception) { false }
+            android.os.Handler(android.os.Looper.getMainLooper()).post { complete(saved) }
+            if (saved) try { upload(ctx) } catch (_: Exception) { }
+        }
+    }
+
+    fun uploadConfigured() = BuildConfig.SENTRY_DSN.isNotBlank()
 
     private const val SEND = "send_reports"
 

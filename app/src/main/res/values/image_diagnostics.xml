@@ -1,0 +1,12 @@
+<resources>
+    <string name="image_diagnostics_title">Image diagnostics</string>
+    <string name="image_diagnostics_summary">Frame rate, decoder and a 30-second check</string>
+    <string name="image_diagnostics_capture">Check for 30 seconds</string>
+    <string name="image_diagnostics_running">Recording: %1$d seconds left. You can close this window and switch widgets.</string>
+    <string name="image_diagnostics_finished">Check finished. Complete samples: %1$d.</string>
+    <string name="image_diagnostics_help">The chart shows Android Auto decoder output over the last minute. Gaps mean no samples, not zero FPS. Settings can pause projection. CarPlay and AutoKit FPS are not measured here. A new AA session resets the chart and check.</string>
+    <string name="image_diagnostics_decoder">Decoder: %1$s</string>
+    <string name="image_diagnostics_dropped">Dropped in the last interval: %1$s</string>
+    <string name="image_diagnostics_report_notice">Save diagnostics and recent logs? Sending follows your report settings. Logs may contain personal data.</string>
+    <string name="image_diagnostics_capture_result">Check: %1$d samples; decoder output %2$d–%3$d FPS.</string>
+</resources>

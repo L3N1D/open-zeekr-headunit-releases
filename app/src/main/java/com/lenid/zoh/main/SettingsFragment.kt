@@ -480,6 +480,11 @@ class SettingsFragment : Fragment() {
 
     private fun saveSettings() {
         checkChanges()
+        val pictureChanged = (pendingResolution != null && pendingResolution != settings.resolutionId) ||
+            (pendingDpi != null && pendingDpi != settings.dpiPixelDensity) ||
+            (pendingPixelAspectRatioE4 != null && pendingPixelAspectRatioE4 != settings.pixelAspectRatioE4) ||
+            (pendingFpsLimit != null && pendingFpsLimit != settings.fpsLimit)
+        if (pictureChanged) com.lenid.zoh.utils.PictureSettingsTrial.begin(requireContext())
         var audioSessionEnded = false
         val languageChanged = pendingAppLanguage != settings.appLanguage
 
@@ -643,6 +648,7 @@ class SettingsFragment : Fragment() {
             getString(if (audioSessionEnded) R.string.audio_settings_reconnect else R.string.settings_saved),
             if (audioSessionEnded) Toast.LENGTH_LONG else Toast.LENGTH_SHORT, force = true)
 
+        if (pictureChanged) PictureTrialNotice.show(requireView())
         if (languageChanged || hudMirroringChanged) {
             requireActivity().recreate()
         }
@@ -2197,22 +2203,9 @@ class SettingsFragment : Fragment() {
             }
         ))
 
-        // --- Backup Settings ---
-        items.add(SettingItem.CategoryHeader("backup", R.string.category_backup))
-
-        items.add(SettingItem.SettingEntry(
-            stableId = "exportSettings",
-            nameResId = R.string.export_settings,
-            value = getString(R.string.export_settings_description),
-            onClick = { _ -> startExportSettings() }
-        ))
-
-        items.add(SettingItem.SettingEntry(
-            stableId = "importSettings",
-            nameResId = R.string.import_settings,
-            value = getString(R.string.import_settings_description),
-            onClick = { _ -> startImportSettings() }
-        ))
+        items.addAll(com.lenid.zoh.main.settings.MaintenanceSettings.entries(
+            getString(R.string.export_settings_description), getString(R.string.import_settings_description),
+            { startExportSettings() }, { startImportSettings() }, { SupportTools(this).open() }))
 
         // --- Reset Settings ---
         items.add(SettingItem.CategoryHeader("resetSettingsCategory", R.string.reset))
@@ -2225,6 +2218,13 @@ class SettingsFragment : Fragment() {
 
         // --- Debug Settings ---
         items.add(SettingItem.CategoryHeader("debug", R.string.category_debug))
+
+        items.add(SettingItem.SettingEntry(
+            stableId = "imageDiagnostics",
+            nameResId = R.string.image_diagnostics_title,
+            value = getString(R.string.image_diagnostics_summary),
+            onClick = { ImageDiagnosticsDialog.show(this) }
+        ))
 
         val overlayLabels = mapOf(
             PerformanceOverlayField.FPS to getString(R.string.overlay_field_fps),

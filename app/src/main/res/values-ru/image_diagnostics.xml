@@ -1,0 +1,12 @@
+<resources>
+    <string name="image_diagnostics_title">Диагностика изображения</string>
+    <string name="image_diagnostics_summary">Частота кадров, декодер и проверка на 30 секунд</string>
+    <string name="image_diagnostics_capture">Проверить 30 секунд</string>
+    <string name="image_diagnostics_running">Сбор данных: осталось %1$d сек. Можно закрыть окно и переключать виджеты.</string>
+    <string name="image_diagnostics_finished">Проверка завершена. Полных замеров: %1$d.</string>
+    <string name="image_diagnostics_help">График показывает вывод декодера Android Auto за последнюю минуту. Пробелы означают отсутствие замеров, а не нулевой FPS. В настройках проекция может приостанавливаться. FPS CarPlay и AutoKit здесь не измеряется. Новое подключение AA сбрасывает график и проверку.</string>
+    <string name="image_diagnostics_decoder">Декодер: %1$s</string>
+    <string name="image_diagnostics_dropped">Пропущено за последний интервал: %1$s</string>
+    <string name="image_diagnostics_report_notice">Сохранить диагностику и недавний журнал? Отправка зависит от настройки отчётов. Журнал может содержать личные данные.</string>
+    <string name="image_diagnostics_capture_result">Проверка: %1$d замеров; вывод декодера %2$d–%3$d FPS.</string>
+</resources>

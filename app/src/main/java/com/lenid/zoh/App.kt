@@ -142,8 +142,11 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
         if (Build.VERSION.SDK_INT >= 26)
             com.lenid.zoh.connection.wifi.scan.WifiScanControl.initialize(this)
 
+        com.lenid.zoh.utils.PictureSettingsTrial.restore(this)
         val settings = Settings(this) // Create a Settings instance
         AppLog.init(settings, this) // Initialize AppLog with settings for conditional logging
+        com.lenid.zoh.utils.ConnectionJournal.start(this)
+        com.lenid.zoh.utils.WakePictureCheck.register(this)
         com.lenid.zoh.utils.SelfPermissionGrant.apply(this)
 
         // Sync auto-start settings to device-protected storage so that

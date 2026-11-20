@@ -1627,6 +1627,8 @@
     <string name="update_install">Update</string>
     <string name="update_downloading">Downloading the update…</string>
     <string name="update_download_failed">Could not download the update. Check the internet connection.</string>
+    <string name="update_permission_details">This device has no dedicated permission screen. Check the app details for permission to install apps. If unavailable, install the APK manually.</string>
+    <string name="update_permission_unavailable">This device cannot open the install permission settings. Install the APK manually.</string>
     <string name="update_install_permission">Allow Open Zeekr Headunit to install apps, then press Update again.</string>
     <string name="update_wait_disconnect">Disconnect Android Auto first: installing restarts the app.</string>
     <!-- Updates tab -->

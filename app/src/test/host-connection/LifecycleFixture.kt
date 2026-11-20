@@ -199,7 +199,7 @@ private fun scanControlObserverRegression() {
                         check(WifiScanControl.calls.single() == WifiScanControl.Call(observer))
                         observer.transition(firstLive)
                         check(WifiScanControl.calls.last() == WifiScanControl.Call(observer, accepted,
-                            strategy == NativeStrategy.HOTSPOT)) { "scan start missing: SDK=$sdk phase=$firstLive" }
+                            false /* Zeekr uses Wi-Fi Direct */)) { "scan start missing: SDK=$sdk phase=$firstLive" }
                         observer.disconnected()
                         check(WifiScanControl.calls.last() == WifiScanControl.Call(observer))
                         val replacement = Any()
@@ -243,7 +243,7 @@ private fun scanControlObserverRegression() {
         Build.VERSION.SDK_INT = originalSdk
         WifiScanControl.calls.clear()
     }
-    println("PASS scan observer: Direct/Hotspot, skipped live phases, disconnect/error, new connection identity, excluded routes and SDK gate")
+    println("PASS scan observer: Wi-Fi Direct, skipped live phases, disconnect/error, new connection identity, excluded routes and SDK gate")
 }
 
 internal fun audioLifecycleBoundaryRegression() {

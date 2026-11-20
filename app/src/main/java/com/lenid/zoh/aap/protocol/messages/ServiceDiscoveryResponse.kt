@@ -135,6 +135,10 @@ internal class ServiceDiscoveryResponse(context: Context, audioConfig: AudioSess
                         30 -> Control.Service.MediaSinkService.VideoConfiguration.VideoFrameRateType._30
                         else -> Control.Service.MediaSinkService.VideoConfiguration.VideoFrameRateType._60
                     }
+                    // Record the actual advertised rate, not a prediction made later by the UI.
+                    com.lenid.zoh.utils.ProjectionDiagnostics.profile(
+                        if (announcedFps == 30) 30 else 60, settings.fpsLimit,
+                        System.nanoTime() / 1_000_000, settings.videoProfileStarvationCap)
                     val announcedPar = HeadUnitScreenConfig.getPixelAspectRatioE4()
                     // The phone authors its UI for this shape for the whole session. Keep the exact
                     // value so a later card resize compensates against what was actually sent.
@@ -325,7 +329,9 @@ internal class ServiceDiscoveryResponse(context: Context, audioConfig: AudioSess
                 service.mediaPlaybackService = Control.Service.MediaPlaybackStatusService.newBuilder().build()
             }.build()
             services.add(mediaPlaybackStatus)
-            if (com.lenid.zoh.aap.ZeekrIncomingCall.supported(context)) {
+            val supportsPhoneStatus = com.lenid.zoh.aap.ZeekrIncomingCall.supported(context)
+            AppLog.i("AA phone status channel advertised: $supportsPhoneStatus")
+            if (supportsPhoneStatus) {
                 services.add(Control.Service.newBuilder().setId(Channel.ID_PHONE)
                     .setPhoneStatusService(Control.Service.PhoneStatusService.getDefaultInstance()).build())
             }

@@ -1449,6 +1449,8 @@ Open Headunit предоставляется «как есть» без каки
     <string name="update_install">Обновить</string>
     <string name="update_downloading">Скачиваю обновление…</string>
     <string name="update_download_failed">Не удалось скачать обновление. Проверьте подключение к интернету.</string>
+    <string name="update_permission_details">На устройстве нет отдельного экрана разрешения. Проверьте разрешение на установку в сведениях о приложении. Если его там нет, установите APK вручную.</string>
+    <string name="update_permission_unavailable">Устройство не открывает настройки разрешения на установку. Установите APK вручную.</string>
     <string name="update_install_permission">Разрешите Open Zeekr Headunit устанавливать приложения, затем снова нажмите «Обновить».</string>
     <string name="update_wait_disconnect">Сначала отключите Android Auto: установка перезапускает приложение.</string>
     <!-- Вкладка обновлений -->

@@ -16,6 +16,8 @@
     android:divider="@drawable/home_gap"
     android:showDividers="middle">
 
+    <include layout="@layout/view_home_diagnostics" />
+
     <!-- The pages: the main one from this file, the rest added by HomeFragment.renderPages. The
          dots under them only show with more than one page. -->
     <com.lenid.zoh.main.HomePager

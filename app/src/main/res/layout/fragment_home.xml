@@ -68,6 +68,8 @@
 
     </LinearLayout>
 
+    <include layout="@layout/view_home_diagnostics" />
+
     <LinearLayout
         android:id="@+id/main_buttons_container"
         android:layout_width="match_parent"

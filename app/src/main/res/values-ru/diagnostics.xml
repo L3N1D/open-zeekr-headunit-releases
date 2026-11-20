@@ -1,0 +1,24 @@
+<resources>
+    <string name="problem_report_title">Сообщить о проблеме</string>
+    <string name="problem_report_save">Сохранить отчёт</string>
+    <string name="problem_report_send_notice">В отчёт войдут эти параметры и недавний журнал приложения. Он будет поставлен в очередь Bugsink согласно настройке отправки. Снимок экрана не сохраняется. Журнал может содержать личные данные.</string>
+    <string name="problem_report_local_notice">Отчёт и недавний журнал будут сохранены локально. Отправка отключена или не настроена. При включении отправки позднее сохранённые отчёты могут отправиться.</string>
+    <string name="problem_report_saved">Отчёт сохранён на устройстве. Доставка на сервер пока не подтверждена.</string>
+    <string name="problem_report_failed">Не удалось сохранить отчёт.</string>
+    <string name="connection_summary_idle">Ожидание устройства — выберите подключение</string>
+    <string name="connection_summary_error">Android Auto: ошибка подключения — сохраните отчёт</string>
+    <string name="connection_summary_video">Android Auto: подключён, изображение получено</string>
+    <string name="connection_summary_wait_video">Android Auto: подключён, ожидание изображения</string>
+    <string name="diagnostics_window">Окно главного экрана: %1$d × %2$d пикс.</string>
+    <string name="diagnostics_selected_fps">Выбранная частота: %1$d FPS</string>
+    <string name="diagnostics_announced_fps">Запрошенная у AA частота: %1$s FPS</string>
+    <string name="diagnostics_cap">Защитное снижение частоты: %1$s</string>
+    <string name="diagnostics_cap_yes">включено (защита беспроводного профиля)</string>
+    <string name="diagnostics_cap_no">не применялось</string>
+    <string name="diagnostics_video_rates">Вход декодера: %1$d FPS; вывод: %2$d FPS</string>
+    <string name="diagnostics_sample_age">Последний замер: %1$d сек. назад</string>
+    <string name="diagnostics_no_sample">Для этого подключения пока нет замера частоты кадров.</string>
+    <string name="diagnostics_fps_note">Статистика декодера не измеряет частоту обновления физического экрана. При возврате домой вывод видео может приостанавливаться.</string>
+    <string name="problem_report_note">Что произошло? (необязательно, без личных данных)</string>
+    <string name="diagnostics_cap_recovery">восстановление после подключений без изображения</string>
+</resources>

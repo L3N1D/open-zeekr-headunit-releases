@@ -45,7 +45,10 @@ class DirectCarPlayService : Service() {
     override fun onBind(intent: Intent?) = LocalBinder()
     override fun onCreate() {
         super.onCreate()
+        currentService = this
         mutableStatus.value = getString(R.string.carplay_ready)
+        // Observe the existing status; the diagnostics UI never binds or starts this service.
+        scope.launch { status.collect { diagnosticStatus = it } }
         // AA retains priority. Never disconnect AA or alter its preferences from this feature.
         scope.launch {
             App.provide(this@DirectCarPlayService).commManager.connectionState.collect {
@@ -126,12 +129,13 @@ class DirectCarPlayService : Service() {
                         override fun onSessionActive(active: AirPlaySession) { scope.launch {
                             if (attempt != generation) return@launch
                             session = active
+                            com.lenid.zoh.utils.ConnectionJournal.record(this@DirectCarPlayService, "CP:connected")
                             scope.launch(Dispatchers.IO) { active.setNightMode(night) }
                             controller?.showViewArea(areaIndex)
                             mutableStatus.value = getString(R.string.carplay_connected)
                         } }
                         override fun onSessionEnded(active: AirPlaySession) { scope.launch {
-                            if (session === active) { session = null; mutableStatus.value = getString(R.string.carplay_waiting) }
+                            if (session === active) { com.lenid.zoh.utils.ConnectionJournal.record(this@DirectCarPlayService, "CP:disconnected"); session = null; mutableStatus.value = getString(R.string.carplay_waiting) }
                         } }
                         override fun onHostUiRequested(session: AirPlaySession) {
                             // Do not open a fullscreen activity from an iPhone Home event.
@@ -170,6 +174,7 @@ class DirectCarPlayService : Service() {
         scope.launch(Dispatchers.IO) { active?.setNightMode(isNight) }
     }
     fun stopSession() {
+        if (session != null) com.lenid.zoh.utils.ConnectionJournal.record(this, "CP:disconnected")
         generation++; starting = false
         val oldController = controller; val oldSink = sink
         controller = null; sink = null; session = null; areaIndex = 0
@@ -183,6 +188,8 @@ class DirectCarPlayService : Service() {
         generation++; controller = null; sink = null; session = null
         closeTransport(oldController, oldSink)
         scope.cancel()
+        if (currentService === this) currentService = null
+        diagnosticStatus = ""
         super.onDestroy()
     }
     private fun closeTransport(oldController: CarPlayController?, oldSink: AndroidMediaSink?) {
@@ -208,5 +215,17 @@ class DirectCarPlayService : Service() {
             .setContentText(getString(R.string.carplay_notification)).setOngoing(true)
             .addAction(0, getString(R.string.carplay_stop), stop).build())
     }
-    companion object { private const val ACTION_STOP = "com.lenid.zoh.carplay.STOP" }
+    companion object {
+        @Volatile private var currentService: DirectCarPlayService? = null
+        fun sessionRunning(): Boolean = currentService?.running == true
+        fun refreshCurrentPicture(): Boolean {
+            val service = currentService ?: return false
+            if (!service.connected || service.surface?.isValid != true) return false
+            service.sink?.refreshPicture(110) ?: return false
+            return true
+        }
+        private const val ACTION_STOP = "com.lenid.zoh.carplay.STOP"
+        @Volatile var diagnosticStatus: String = ""
+            private set
+    }
 }

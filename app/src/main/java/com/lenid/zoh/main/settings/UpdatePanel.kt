@@ -106,7 +106,6 @@ class UpdatePanel(private val fragment: Fragment) {
         }
         if (!UpdateInstaller.canInstall(activity)) {
             // One-time: Android asks the user to let this app install updates.
-            ToastUtils.showToast(activity, R.string.update_install_permission, Toast.LENGTH_LONG, force = true)
             UpdateInstaller.openInstallPermission(activity)
             return
         }

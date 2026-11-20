@@ -766,6 +766,8 @@ class VideoDecoder(
      * it created, so `===` distinguishes a live owner from a torn-down view whose callback is
      * arriving late.
      */
+    fun hasPictureSurface(): Boolean = synchronized(this) { mSurface?.isValid == true }
+
     fun isCurrentSurface(surface: Surface): Boolean = synchronized(this) {
         mSurface === surface || (mSurface == null && detachedSurface === surface)
     }

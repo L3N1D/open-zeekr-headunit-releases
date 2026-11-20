@@ -401,6 +401,8 @@ internal class AapControlService(
                 AppLog.i("RX: Channel Close Notification on chan ${message.channel}")
                 return 0
             }
+            // Informational phone notification; no response or state change is required here.
+            Control.ControlMsgType.MESSAGE_BATTERY_STATUS_NOTIFICATION_VALUE -> return 0
             else -> AppLog.e("Unsupported Control message type: ${message.type}")
         }
         return 0
@@ -568,6 +570,7 @@ internal class AapControlGateway(
     }
 
     private fun channelOpenRequest(request: Control.ChannelOpenRequest, channel: Int): Int {
+        if (channel == Channel.ID_PHONE) AppLog.i("AA phone status channel open requested")
         val msg = AapMessage(channel, Control.ControlMsgType.MESSAGE_CHANNEL_OPEN_RESPONSE_VALUE, Control.ChannelOpenResponse.newBuilder()
                 .setStatus(Common.MessageStatus.STATUS_SUCCESS)
                 .build())

@@ -250,6 +250,7 @@ class HomeFragment : Fragment() {
             updateIcon.setImageResource(if (available) R.drawable.ic_update_available else R.drawable.ic_refresh_white)
             updateLabel.setText(if (available) R.string.home_new_update else R.string.home_updates)
         }
+        HomeDiagnostics.bind(this)
         renderHome()
 
         activity?.findViewById<View>(R.id.status_notices)?.let { notices ->
@@ -466,6 +467,8 @@ class HomeFragment : Fragment() {
             pagesHint?.close(HomePagesHintView.Reason.LEFT)
         }
         val palette = homePalette(ctx)
+        root.findViewById<TextView>(R.id.home_connection_summary)?.setTextColor(palette.textMuted)
+        root.findViewById<TextView>(R.id.home_report_problem)?.setTextColor(palette.text)
         // With more than one page the card is not always in view, so the bar carries every chosen
         // connection, the one the card offers included. Otherwise, on a page without the card, a
         // unit with a single chosen mode has no way to start it.

@@ -126,12 +126,29 @@ object UpdateInstaller {
     /** The system page where the user lets this app install updates. */
     fun openInstallPermission(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        try {
-            context.startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                Uri.parse("package:${context.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        } catch (e: Exception) {
-            AppLog.e("$TAG: cannot open the install permission page", e)
+        val appUri = Uri.parse("package:${context.packageName}")
+        val route = InstallPermissionRoute.open { page ->
+            val intent = when (page) {
+                InstallPermissionRoute.Page.DEDICATED -> Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, appUri)
+                InstallPermissionRoute.Page.APP_DETAILS -> Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, appUri)
+            }
+            try {
+                context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                true
+            } catch (e: android.content.ActivityNotFoundException) {
+                false
+            } catch (e: SecurityException) {
+                false
+            } catch (e: RuntimeException) {
+                AppLog.e("$TAG: failed to open install permission settings ($page)", e)
+                false
+            }
         }
+        ToastUtils.showToast(context, when (route) {
+            InstallPermissionRoute.Page.DEDICATED -> R.string.update_install_permission
+            InstallPermissionRoute.Page.APP_DETAILS -> R.string.update_permission_details
+            null -> R.string.update_permission_unavailable
+        }, Toast.LENGTH_LONG, force = true)
     }
 
     /** Opens the system installer on [apk]; the user confirms there. */
