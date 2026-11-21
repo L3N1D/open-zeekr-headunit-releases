@@ -31,7 +31,8 @@ class SocketProjectionConnection(
     private var transport: Socket
     // Socket#isConnected might return true, even if server has closed the connection
     // Only way to capture it is to check for exceptions, E.g. "SocketException: Broken pipe"
-    private var transportBroken: Boolean = false
+    @Volatile private var transportBroken: Boolean = false
+    @Volatile private var localCloseRequested: Boolean = false
     // Only true for genuine Nearby tunnels, where the handshake's AA-16.4+ settle delay
     // and stale-byte drain must be skipped because every byte from the start matters.
     // Regular WirelessServer-accepted sockets (Hotspot/WiFi Direct/Headunit Server) and
@@ -59,7 +60,7 @@ class SocketProjectionConnection(
     override val type = ProjectionConnection.Type.WIFI
 
     override val isConnected: Boolean
-        get() = transport.isConnected && !transportBroken
+        get() = transport.isConnected && !transport.isClosed && !localCloseRequested && !transportBroken
 
     // Nearby exposes a synthetic loopback address for a remote phone. Retain the route on
     // this connection object so a later attempted endpoint cannot change session ownership.
@@ -205,13 +206,12 @@ class SocketProjectionConnection(
     }
 
     override fun disconnect() {
-        if (transport.isConnected) {
-            try {
-                transport.close()
-            } catch (e: IOException) {
-                AppLog.e(e)
-            }
-
+        // Publish before close() wakes a blocked reader/writer on another thread.
+        localCloseRequested = true
+        try {
+            transport.close()
+        } catch (e: IOException) {
+            AppLog.e(e)
         }
         input = null
         output = null
@@ -259,7 +259,11 @@ class SocketProjectionConnection(
     }
 
     private fun handleBrokenTransport(e: SocketException) {
-        AppLog.e("Socket broken (server disconnected ungracefully?)", e)
+        if (localCloseRequested) {
+            AppLog.d("Projection socket ended after local disconnect")
+        } else {
+            AppLog.e("Socket broken (server disconnected ungracefully?)", e)
+        }
         transportBroken = true
 
         // Force close the stream/socket so the OS frees the file descriptor

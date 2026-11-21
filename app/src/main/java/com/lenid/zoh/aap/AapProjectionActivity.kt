@@ -1908,7 +1908,14 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         }
         startMain.flags = Intent.FLAG_ACTIVITY_NEW_TASK
         AppLog.i("AapProjectionActivity: moving the projection to the background, home app is this one=$isHome")
-        startActivity(startMain)
+        try {
+            startActivity(startMain)
+        } catch (e: RuntimeException) {
+            // Some head units refuse HOME even when it resolves. Keep the current projection
+            // and session intact when the optional handoff fails.
+            AppLog.w("AapProjectionActivity: could not move to background: ${e.javaClass.simpleName}: ${e.message}")
+            ToastUtils.showToast(this, R.string.exit_dialog_background_failed, Toast.LENGTH_LONG, force = true)
+        }
     }
 
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: android.content.res.Configuration) {

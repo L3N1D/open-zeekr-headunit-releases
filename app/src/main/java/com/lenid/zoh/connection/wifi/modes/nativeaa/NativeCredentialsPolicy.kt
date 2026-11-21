@@ -64,6 +64,10 @@ object NativeCredentialsPolicy {
     /** Whether [bssid] is a real address rather than absent, blank or a masking placeholder. */
     fun isUsableBssid(bssid: String?): Boolean = SoftApBssidPolicy.isUsable(bssid)
 
+    /** A group callback can precede its address readback. Keep the existing credential deadline. */
+    fun shouldAwaitBssid(strategy: NativeStrategy, bssid: String?): Boolean =
+        !isUsableBssid(bssid) && onUnusableBssid(strategy) == UnusableBssidAction.ABORT
+
     /** What to do when [isUsableBssid] said no. */
     fun onUnusableBssid(strategy: NativeStrategy): UnusableBssidAction = when (strategy) {
         NativeStrategy.WIFI_DIRECT -> UnusableBssidAction.ABORT

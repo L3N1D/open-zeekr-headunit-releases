@@ -19,6 +19,15 @@ class NativeCredentialsPolicyTest {
     }
 
     @Test
+    fun `WiFi Direct waits for actual address readback before declaring credentials ready`() {
+        for (missing in listOf(null, "", "02:00:00:00:00:00", "00:00:00:00:00:00")) {
+            assertTrue(NativeCredentialsPolicy.shouldAwaitBssid(NativeStrategy.WIFI_DIRECT, missing))
+        }
+        // A locally administered address from the platform is valid; inventing one is not.
+        assertFalse(NativeCredentialsPolicy.shouldAwaitBssid(NativeStrategy.WIFI_DIRECT, "02:1a:2b:3c:4d:5e"))
+    }
+
+    @Test
     fun `WiFi Direct aborts rather than send credentials the phone will reject`() {
         // Measured behaviour, not caution: a masked BSSID on the P2P path means the join fails
         // anyway, and the usual cause — location services off — is something the user can fix

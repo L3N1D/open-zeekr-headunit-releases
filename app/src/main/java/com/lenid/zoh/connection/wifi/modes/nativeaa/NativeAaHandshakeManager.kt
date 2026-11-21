@@ -2899,13 +2899,15 @@ class NativeAaHandshakeManager(
             AppLog.i("NativeAA: Phone connected. Current credentials state: SSID=${credentials?.ssid ?: "<null>"}, IP=${credentials?.ip ?: "<null>"}")
             AppLog.i("NativeAA: Waiting for WiFi credentials to be ready (Max ${CREDENTIALS_WAIT_MS / 1000}s)...")
 
-            // Wait for credentials (P2P group / hotspot bring-up can be slow), servicing the
-            // phone's messages while we do: an early Type 2 or Type 5 lands here, not in the loop
-            // below.
+            // A group can publish its name/key before its BSSID is readable. Wait for usable
+            // readback within the same deadline, servicing Type 2/5 and pings while we do.
+            // A masked address must neither end this wait early nor be sent to the phone.
             val credentialsDeadline = SystemClock.elapsedRealtime() + CREDENTIALS_WAIT_MS
             var lastRefreshAt = SystemClock.elapsedRealtime()
             var lastProgressLogAt = SystemClock.elapsedRealtime()
-            while (credentials == null && isRunning && isActive && session.stage != WppStage.HOLDING &&
+            while ((credentials?.let {
+                    NativeCredentialsPolicy.shouldAwaitBssid(transport, it.bssid)
+                } ?: true) && isRunning && isActive && session.stage != WppStage.HOLDING &&
                 !session.isTerminal() && SystemClock.elapsedRealtime() < credentialsDeadline) {
                 val now = SystemClock.elapsedRealtime()
                 val waitedS = (CREDENTIALS_WAIT_MS - (credentialsDeadline - now)) / 1000
@@ -2919,6 +2921,13 @@ class NativeAaHandshakeManager(
                 }
                 tick(500)
             }
+
+            // A cancelled/stopped or failed exchange must not inspect or send credentials.
+            if (!isRunning || !isActive) {
+                abortedLocally = true
+                return@withContext
+            }
+            if (session.isTerminal()) return@withContext
 
             // The session landed before the credentials were needed: nothing is left to send.
             if (session.stage == WppStage.HOLDING) {
@@ -2971,12 +2980,10 @@ class NativeAaHandshakeManager(
             if (!NativeCredentialsPolicy.isUsableBssid(credBssid)) {
                 when (NativeCredentialsPolicy.onUnusableBssid(transport)) {
                     UnusableBssidAction.ABORT -> {
-                        AppLog.e("NativeAA: BSSID is still masked/empty ($credBssid) at Type 3 time — phone WILL reject these credentials. Aborting handshake. PLEASE CHECK IF LOCATION (GPS) IS ENABLED ON THIS DEVICE!")
-                        // Location is the usual cause and the one worth naming first. What follows
-                        // it has to be exact: every rung was tried, including the one that needs no
-                        // permission at all, and the dump above says what each answered. Telling
-                        // the reader the address cannot be read here would send them to type one
-                        // in when the log has already shown which source refused.
+                        AppLog.e("NativeAA: BSSID is still masked/empty ($credBssid) after waiting for WiFi credentials. Aborting handshake without sending unusable credentials.")
+                        // Keep the readback failure visible. The source dump distinguishes a
+                        // platform restriction from a group still coming up; GPS alone is not
+                        // evidence either way (the reported head unit already had it enabled).
                         AppLog.e("NativeAA: If location is already on, no source on this unit answered - not the interface's own address, not sysfs, and not the address derived from its IPv6 link-local. The dump above says what each one returned. A group that has not come up yet is the common reason; where it has, read the P2P device address from the system and set it as the static BSSID under Wireless connection in Settings.")
                         // The loudest failure on this route: two error lines in a log, and a phone
                         // that simply never arrives. Recorded so the main screen can say so later,
@@ -3061,6 +3068,11 @@ class NativeAaHandshakeManager(
                 tick(250)
             }
 
+        } catch (e: CancellationException) {
+            // Stop/replacement is local control flow, not a silent Bluetooth failure.
+            abortedLocally = true
+            AppLog.d("NativeAA: Handshake cancelled locally")
+            throw e
         } catch (e: Exception) {
             AppLog.e("NativeAA: Handshake error: ${e.message}", e)
         } finally {
@@ -3072,8 +3084,8 @@ class NativeAaHandshakeManager(
                 handshakeStartedAt = 0L
                 handoffSettlingSince = 0L
                 // [BUG_FIX] Every silent ending counts, not just the timeout that used to
-                // increment inline: a socket error, a swallowed write and a cancellation are one
-                // failure from the outside, and each strands an unreclaimable IO thread.
+                // increment inline: a socket error or a swallowed write can strand an
+                // unreclaimable IO thread. Local cancellation is excluded above.
                 // Excludes our own pre-exchange aborts (no credentials, masked BSSID, USB already
                 // up) — those repeat for as long as location services are off, and backing off
                 // would bury the log line saying how to fix it.

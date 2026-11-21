@@ -578,6 +578,7 @@ Open Headunit предоставляется «как есть» без каки
     <string name="exit_dialog_stop">Остановить соединение</string>
     <string name="exit_dialog_pip">Картинка в картинке (PiP)</string>
     <string name="exit_dialog_background">В фоновый режим</string>
+    <string name="exit_dialog_background_failed">Не удалось открыть главный экран. Проекция остаётся открытой.</string>
     <string name="gesture_hint">Совет: Проведите двумя пальцами от левого края, чтобы открыть меню выхода.</string>
     <string name="audio_latency_multiplier">Множитель задержки звука</string>
     <string name="aaudio_output">Вывод AAudio (экспериментально)</string>
