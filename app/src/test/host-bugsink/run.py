@@ -12,6 +12,12 @@ native = base / 'connection/wifi/modes/nativeaa'
 for folder, names in [(base/'connection/projection', ['SocketProjectionConnection.kt', 'ProjectionConnection.kt', 'LoopbackBindPolicy.kt']), (native, ['NativeCredentialsPolicy.kt', 'NativeStrategy.kt', 'SoftApBssidPolicy.kt'])]:
     for name in names:
         (OUT/name).write_text((folder/name).read_text())
+transport = ROOT / 'carplay/src/main/java/com/shilapi/xcertplay/transport/TransportIo.kt'
+(OUT/'TransportIo.kt').write_bytes(transport.read_bytes())
+(OUT/'TransportModules.kt').write_text("""package com.lenid.zoh.modules
+import com.shilapi.xcertplay.transport.TransportIo
+object TransportModules { val androidAuto = TransportIo.DEFAULT }
+""")
 s = (native/'NativeAaHandshakeManager.kt').read_text()
 wait = s[s.index('            val credentialsDeadline ='):s.index('            // Read once.', s.index('            val credentialsDeadline ='))]
 catch = s[s.index('        } catch (e: CancellationException) {', s.index('    private suspend fun handleHandshake(')):s.index('        } finally {', s.index('            AppLog.e("NativeAA: Handshake error:'))]
