@@ -68,6 +68,7 @@ class IphoneUsbHost(
     private val usbManager: UsbManager,
     private val matcher: IphoneUsbMatcher,
     private val permissionAction: String = "${context.packageName}.IPHONE_USB_PERMISSION",
+    private val io: TransportIo = TransportIo.DEFAULT,
     private val onDiagnostic: (String) -> Unit = {},
 ) {
     private val appContext = context.applicationContext
@@ -246,7 +247,7 @@ class IphoneUsbHost(
         if (!usbManager.hasPermission(device)) {
             throw IphoneUsbException.PermissionDenied("USB permission has not been granted")
         }
-        val connection = usbManager.openDevice(device)
+        val connection = io.acquireUsb { usbManager.openDevice(device) }
             ?: throw IphoneUsbException.DeviceUnavailable("UsbManager could not open the iPhone")
         try {
             operation(connection)
@@ -266,7 +267,7 @@ class IphoneUsbHost(
         if (!usbManager.hasPermission(device)) {
             throw IphoneUsbException.PermissionDenied("USB permission has not been granted")
         }
-        var connection = usbManager.openDevice(device)
+        var connection = io.acquireUsb { usbManager.openDevice(device) }
             ?: throw IphoneUsbException.DeviceUnavailable("UsbManager could not open the iPhone")
         var claimedInterface: UsbInterface? = null
         try {
@@ -291,7 +292,7 @@ class IphoneUsbHost(
                 throw IphoneUsbException.DeviceUnavailable("Android could not claim USBMUX interface 1")
             }
             claimedInterface = usbMux
-            return Iap2UsbSession(connection, endpoints.first, endpoints.second, onDiagnostic)
+            return Iap2UsbSession(connection, endpoints.first, endpoints.second, onDiagnostic, io)
         } catch (error: Throwable) {
             if (claimedInterface != null) connection.releaseInterface(claimedInterface)
             connection.close()
@@ -323,7 +324,7 @@ class IphoneUsbHost(
                 // Closing drops the claims without the driver reattach that releaseInterface() requests.
                 reopen = {
                     current.close()
-                    current = usbManager.openDevice(device)
+                    current = io.acquireUsb { usbManager.openDevice(device) }
                         ?: throw IphoneUsbException.DeviceUnavailable("UsbManager could not reopen the iPhone")
                 },
             ) ?: return current
@@ -445,6 +446,7 @@ class Iap2UsbSession internal constructor(
     private val outEndpoint: UsbEndpoint,
     private val inEndpoint: UsbEndpoint,
     private val onDiagnostic: (String) -> Unit = {},
+    private val io: TransportIo = TransportIo.DEFAULT,
 ) : UsbMuxPipe {
     private val stateLock = Any()
     private val readLock = Any()
@@ -452,14 +454,16 @@ class Iap2UsbSession internal constructor(
     private var closed = false
     private var failure: IphoneUsbException? = null
     private var pendingRead: UsbRequest? = null
-    private val readQueuePolicy = UsbReadQueuePolicy.forCurrentPlatform()
+    private val readQueuePolicy = UsbReadQueuePolicy.forCurrentPlatform(io, inEndpoint.maxPacketSize)
     private val requests = UsbRequestQueue(connection, "usbmux-read-reaper")
 
     override fun write(data: ByteArray, timeoutMillis: Int) = synchronized(writeLock) {
         checkOpen()
         require(timeoutMillis > 0) { "timeoutMillis must be positive" }
         if (data.isEmpty()) return@synchronized
-        val transferred = connection.bulkTransfer(outEndpoint, data, data.size, timeoutMillis)
+        val transferred = io.transfer(TransportIo.Mode.FRAME, data.size) { _, size ->
+            connection.bulkTransfer(outEndpoint, data, size, timeoutMillis)
+        }
         if (transferred != data.size) {
             throw IphoneUsbException.DeviceUnavailable(
                 "USBMUX write transferred $transferred of ${data.size} bytes",

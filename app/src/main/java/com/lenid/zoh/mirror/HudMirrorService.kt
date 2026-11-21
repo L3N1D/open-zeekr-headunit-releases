@@ -1,5 +1,6 @@
 package com.lenid.zoh.mirror
 
+import com.lenid.zoh.carplay.DirectCarPlayService
 import android.app.Service
 import android.content.Intent
 import android.os.Binder
@@ -32,8 +33,10 @@ class HudMirrorService : Service() {
                     AppLog.i("HudMirrorService: cluster surface attached")
                 }
                 6 -> { ClusterVideo.detachSurface(); AppLog.i("HudMirrorService: cluster surface detached") }
-                7 -> reply?.writeInt(if (ClusterVideo.streaming) 1 else 0)
-                8 -> ClusterVideo.announced?.let { s ->
+                7 -> reply?.writeInt(if (ClusterVideo.streaming || DirectCarPlayService.clusterStreaming()) 1 else 0)
+                8 -> DirectCarPlayService.clusterSize()?.let { (w, h) ->
+                    reply?.writeInt(w); reply?.writeInt(h); reply?.writeInt(w); reply?.writeInt(h)
+                } ?: ClusterVideo.announced?.let { s ->
                     reply?.writeInt(s.contentWidth); reply?.writeInt(s.contentHeight)
                     reply?.writeInt(ClusterVideo.WIDTH); reply?.writeInt(ClusterVideo.HEIGHT)
                 }

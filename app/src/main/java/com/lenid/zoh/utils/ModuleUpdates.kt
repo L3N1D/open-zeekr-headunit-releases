@@ -1,13 +1,16 @@
 package com.lenid.zoh.utils
 
+import com.lenid.zoh.modules.CodeModules
 import android.content.Context
 import android.util.Base64
 import com.lenid.zoh.BuildConfig
 import com.lenid.zoh.R
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.net.URL
@@ -28,14 +31,17 @@ enum class ModuleProfile(val id: String, val title: Int, val field: String, val 
 }
 
 object ModuleUpdates {
-    private const val BASE = "https://raw.githubusercontent.com/L3N1D/open-zeekr-headunit-releases/main/module-updates/"
-    private val lock = Mutex()
+    private const val BASE = "https://raw.githubusercontent.com/L3N1D/open-zeekr-headunit-releases/main/"
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var currentCheck: Deferred<Int>? = null
+    val restartPending = MutableStateFlow(false)
     private var active: Map<ModuleProfile, JSONObject> = emptyMap()
     private fun prefs(context: Context) = context.getSharedPreferences("module_profiles_v1", Context.MODE_PRIVATE)
     private fun compatible(obj: JSONObject) =
         BuildConfig.VERSION_CODE in obj.getInt("minCore")..obj.getInt("maxCore")
 
     fun initialize(context: Context) {
+        CodeModules.initialize(context)
         active = ModuleProfile.values().mapNotNull { module ->
             val data = prefs(context).getString(module.id, null) ?: return@mapNotNull null
             runCatching { JSONObject(data) }.getOrNull()?.takeIf {
@@ -51,6 +57,7 @@ object ModuleUpdates {
     }
 
     fun pending(context: Context): List<ModuleProfile> = ModuleProfile.values().filter { module ->
+        if (CodeModules.stagedRevision(module) > CodeModules.activeRevision(module)) return@filter true
         val stored = prefs(context).getString(module.id, null)
         stored != null && runCatching {
             val profile = JSONObject(stored)
@@ -71,7 +78,11 @@ object ModuleUpdates {
             current == 1 -> context.getString(R.string.module_builtin)
             else -> active[module]?.optString("notes").orEmpty()
         }
-        context.getString(module.title) + " · v" + current + "\n" + status
+        val code = CodeModules.activeRevision(module)
+        val stagedCode = CodeModules.stagedRevision(module)
+        val codeStatus = if (stagedCode > code) context.getString(R.string.module_pending, stagedCode) else ""
+        listOf(context.getString(module.title), context.getString(R.string.module_versions, current, code),
+            status, codeStatus).filter { it.isNotEmpty() }.joinToString("\n")
     }
 
     private fun download(path: String): ByteArray {
@@ -97,29 +108,51 @@ object ModuleUpdates {
         }
     }
 
-    suspend fun refresh(context: Context): Int = withContext(Dispatchers.IO) {
-        lock.withLock {
-            try {
-                fetch(context)
-            } catch (e: Exception) {
-                AppLog.w("Module catalog: ${e.javaClass.simpleName}")
-                R.string.module_failed
-            }
+    suspend fun refresh(context: Context): Int = synchronized(this) {
+        currentCheck?.takeIf { !it.isCompleted } ?: scope.async {
+            checkCatalogs(context.applicationContext)
+        }.also { currentCheck = it }
+    }.await()
+
+    private fun checkCatalogs(context: Context): Int {
+        val profiles = try {
+            fetch(context)
+        } catch (e: Exception) {
+            AppLog.w("Module catalog: ${e.javaClass.simpleName}")
+            R.string.module_failed
+        }
+        val programs = try {
+            CodeModules.refresh(context, load = ::download)
+        } catch (e: Exception) {
+            AppLog.w("Code catalog: ${e.javaClass.simpleName}")
+            false
+        }
+        restartPending.value = pending(context).isNotEmpty()
+        changes.postValue(Unit)
+        return when {
+            programs && profiles == R.string.module_checked -> R.string.module_checked
+            !programs && profiles == R.string.module_failed -> R.string.module_failed
+            else -> R.string.module_partial
         }
     }
 
     private fun fetch(context: Context): Int {
-        val envelope = JSONObject(String(download("stable.json"), Charsets.UTF_8))
+        val envelope = JSONObject(String(download("module-updates/stable.json"), Charsets.UTF_8))
+        val catalog = verify(key(context), envelope)
+        require(catalog.getInt("schema") == 1)
+        return stageProfiles(context, catalog.getJSONArray("modules")) { download("module-updates/$it") }
+    }
+
+    internal fun key(context: Context): ByteArray =
+        context.resources.openRawResource(R.raw.module_update_key).use { it.readBytes() }
+
+    internal fun verify(key: ByteArray, envelope: JSONObject): JSONObject {
         val payload = Base64.decode(envelope.getString("payload"), Base64.DEFAULT)
-        val key = context.resources.openRawResource(R.raw.module_update_key).use { it.readBytes() }
         val verifier = Signature.getInstance("SHA256withECDSA")
         verifier.initVerify(KeyFactory.getInstance("EC").generatePublic(X509EncodedKeySpec(key)))
         verifier.update(payload)
         require(verifier.verify(Base64.decode(envelope.getString("signature"), Base64.DEFAULT)))
-        val catalog = JSONObject(String(payload, Charsets.UTF_8))
-        require(catalog.getInt("schema") == 1)
-        val entries = catalog.getJSONArray("modules")
-        return stageProfiles(context, entries, ::download)
+        return JSONObject(String(payload, Charsets.UTF_8))
     }
 
     internal fun stageProfiles(context: Context, entries: org.json.JSONArray, load: (String) -> ByteArray): Int {

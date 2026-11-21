@@ -145,6 +145,9 @@
         android:largeHeap="true"
         android:supportsRtl="true"
         tools:ignore="GoogleAppIndexingWarning">
+        <activity android:name=".main.ModuleRestartActivity" android:exported="false"
+            android:process=":module_restart" android:taskAffinity="${applicationId}.module_restart"
+            android:excludeFromRecents="true" android:theme="@android:style/Theme.Black.NoTitleBar" />
         <activity android:name=".carplay.DirectCarPlayActivity" android:exported="false"
             android:theme="@style/AppTheme.ConnectionOverlay"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|uiMode|density|keyboardHidden"

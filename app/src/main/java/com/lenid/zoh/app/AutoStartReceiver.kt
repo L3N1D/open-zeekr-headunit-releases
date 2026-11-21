@@ -5,6 +5,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.lenid.zoh.aap.AapService
+import com.lenid.zoh.carplay.DirectCarPlayActivity
+import com.lenid.zoh.carplay.DirectCarPlayService
 import com.lenid.zoh.main.MainActivity
 import com.lenid.zoh.main.SettingsActivity
 import com.lenid.zoh.utils.AppLog
@@ -50,6 +52,18 @@ class AutoStartReceiver : BroadcastReceiver() {
             AppLog.i("BT Device connected: ${device?.name} (${device?.address})")
 
             if (device != null && targetMacs.contains(device.address)) {
+                if (DirectCarPlayService.knownWirelessPhone(context, device.address)) {
+                    if (DirectCarPlayService.sessionRunning() || com.lenid.zoh.App.provide(context).commManager.isBusy) return
+                    val reconnect = Intent(context, DirectCarPlayService::class.java)
+                        .setAction(DirectCarPlayService.ACTION_RECONNECT)
+                        .putExtra(DirectCarPlayActivity.EXTRA_HOME_ADDRESS, device.address)
+                    try {
+                        androidx.core.content.ContextCompat.startForegroundService(context, reconnect)
+                    } catch (e: RuntimeException) {
+                        AppLog.w("CarPlay auto-start unavailable: ${e.message}")
+                    }
+                    return
+                }
                 AppLog.i("MATCH! Starting AapService via Bluetooth Auto-start...")
 
                 // Start the service to make the app alive. Explicit action so onStartCommand

@@ -28,6 +28,7 @@ class NcmUsbBridge internal constructor(
     private val claimedInterfaces: List<UsbInterface>,
     descriptorHostMac: ByteArray?,
     private val onDiagnostic: (String) -> Unit = {},
+    private val io: TransportIo = TransportIo.DEFAULT,
 ) : CarPlayEthernetPipe {
     private val descriptorMac = descriptorHostMac?.copyOf()
     override val hostMac: ByteArray? get() = descriptorMac?.copyOf()
@@ -63,7 +64,7 @@ class NcmUsbBridge internal constructor(
     private val directReadBuffer = ByteBuffer.allocateDirect(READ_CHUNK_BYTES)
     private var readRequest: UsbRequest? = null
     private var readQueued = false
-    private val readQueuePolicy = UsbReadQueuePolicy.forCurrentPlatform()
+    private val readQueuePolicy = UsbReadQueuePolicy.forCurrentPlatform(io, inEndpoint.maxPacketSize)
     private val readRequests = UsbRequestQueue(connection, "ncm-read-reaper")
     private val traffic = NcmTrafficCounter()
     private val statusRunning = AtomicBoolean(statusEndpoint != null)
@@ -444,6 +445,7 @@ class NcmUsbBridge internal constructor(
         fun open(
             connection: UsbDeviceConnection,
             function: NcmFunctionDiscovery.NcmFunction,
+            io: TransportIo = TransportIo.DEFAULT,
             onDiagnostic: (String) -> Unit = {},
         ): NcmUsbBridge {
             val claimed = ArrayList<UsbInterface>(2)
@@ -507,7 +509,7 @@ class NcmUsbBridge internal constructor(
                     function.statusIn,
                     claimed,
                     descriptorHostMac,
-                    onDiagnostic,
+                    onDiagnostic, io,
                 )
             } catch (error: Throwable) {
                 for (usbInterface in claimed.asReversed()) {

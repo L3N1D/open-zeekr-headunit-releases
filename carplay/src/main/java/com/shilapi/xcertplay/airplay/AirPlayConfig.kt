@@ -1,5 +1,7 @@
 package com.shilapi.xcertplay.airplay
 
+import com.shilapi.xcertplay.transport.TransportIo
+
 /** Display insets in pixels, used for CarPlay viewArea and safeArea declarations. */
 data class AirPlayInsets(
     val top: Int = 0,
@@ -117,6 +119,7 @@ data class AirPlayConfig(
     val carData: Set<CarPlayVehicleState.CarData> = emptySet(),
     /** CarPlay Ultra experiment: the read-only lines of iOS's Vehicle app ([CarPlayVehicleState.SettingLine]). */
     val vehicleSettings: List<CarPlayVehicleState.SettingLine> = emptyList(),
+    val transportIo: TransportIo = TransportIo.DEFAULT,
 )
 
 /** The offer, SETUP and controls must all honor the user's audio-output setting. */

@@ -1,5 +1,6 @@
 package com.lenid.zoh.dongle
 
+import com.lenid.zoh.modules.ModuleFunction
 import android.annotation.SuppressLint
 import android.media.AudioAttributes
 import android.media.AudioFormat
@@ -63,15 +64,18 @@ class DongleAudio(private val sendMic: (ByteArray, Int) -> Unit) {
     }
 
     private fun createTrack(decodeType: Int, audioType: Int): AudioTrack {
-        val (rate, channels) = when (decodeType) {
-            3 -> 8000 to 1
-            4 -> 48000 to 2
-            5 -> 16000 to 1
-            6 -> 24000 to 1
-            7 -> 16000 to 2
+        val format = ModuleFunction.PCM_FORMAT.evaluate(decodeType)
+            ?: if (decodeType in 3..7) decodeType - 2 else 0
+        val (rate, channels) = when (format) {
+            1 -> 8000 to 1
+            2 -> 48000 to 2
+            3 -> 16000 to 1
+            4 -> 24000 to 1
+            5 -> 16000 to 2
             else -> 44100 to 2
         }
-        val usage = when (audioType) {
+        val route = ModuleFunction.AUDIO_ROUTE.evaluate(audioType) ?: audioType
+        val usage = when (route) {
             2 -> AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE
             3 -> AudioAttributes.USAGE_VOICE_COMMUNICATION
             else -> AudioAttributes.USAGE_MEDIA

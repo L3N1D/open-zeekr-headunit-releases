@@ -36,6 +36,7 @@ object ConnectionArbiter {
     private var holder: Claim? = null
     class ExternalLease internal constructor()
     private var externalLease: ExternalLease? = null
+    @Synchronized fun projectionReserved() = externalLease != null || holder != null
     private var externalWirelessOwed = false
     private var externalUsbOwed = false
 

@@ -45,6 +45,10 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        val process = if (Build.VERSION.SDK_INT >= 28) Application.getProcessName() else
+            (getSystemService(ACTIVITY_SERVICE) as android.app.ActivityManager).runningAppProcesses
+                ?.firstOrNull { it.pid == android.os.Process.myPid() }?.processName
+        if (process == "$packageName:module_restart") return
         com.lenid.zoh.utils.ModuleUpdates.initialize(this)
         // First, so a crash anywhere after this is written down (see CrashJournal).
         com.lenid.zoh.utils.CrashJournal.install(this)

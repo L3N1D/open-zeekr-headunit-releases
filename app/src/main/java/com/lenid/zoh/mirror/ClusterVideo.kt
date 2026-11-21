@@ -141,14 +141,18 @@ object ClusterVideo {
         }
     }
 
+    internal val companionSurface get() = surface
+
     fun attachSurface(s: Surface) {
         surface = s
         post { switchOutput() }
+        com.lenid.zoh.carplay.DirectCarPlayService.clusterSurfaceChanged()
     }
 
     fun detachSurface() {
         surface = null
         post { switchOutput() }
+        com.lenid.zoh.carplay.DirectCarPlayService.clusterSurfaceChanged()
     }
 
     fun onStart() {

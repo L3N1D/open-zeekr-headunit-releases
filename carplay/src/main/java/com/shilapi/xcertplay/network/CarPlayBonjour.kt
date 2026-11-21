@@ -1,5 +1,7 @@
 package com.shilapi.xcertplay.network
 
+import com.shilapi.xcertplay.transport.TransportIo
+
 import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
@@ -573,8 +575,10 @@ class CarPlayBonjour(
         }
         try {
             emit(CarPlayBonjourEvent.ProbeProgress(CarPlayBonjourEvent.ProbeProgress.Stage.CONNECTING, attempt, address is Inet6Address))
-            sourceAddressFor(address)?.let { socket.bind(InetSocketAddress(it, 0)) }
-            socket.connect(InetSocketAddress(address, port), CONNECT_TIMEOUT_MILLIS)
+            lateinit var peer: InetSocketAddress
+            config.transportIo.open(TransportIo.Path.TCP, { peer = InetSocketAddress(address, port) },
+                { sourceAddressFor(address)?.let { socket.bind(InetSocketAddress(it, 0)) } },
+                { socket.connect(peer, CONNECT_TIMEOUT_MILLIS) })
             stage = CarPlayBonjourEvent.ProbeProgress.Stage.TCP_CONNECTED
             emit(CarPlayBonjourEvent.ProbeProgress(CarPlayBonjourEvent.ProbeProgress.Stage.TCP_CONNECTED, attempt, address is Inet6Address))
             socket.soTimeout = READ_TIMEOUT_MILLIS
@@ -587,7 +591,7 @@ class CarPlayBonjour(
                 deviceId = config.deviceId,
             )
             val output = socket.getOutputStream()
-            output.write(request.toByteArray(StandardCharsets.US_ASCII))
+            config.transportIo.write(output, request.toByteArray(StandardCharsets.US_ASCII))
             output.flush()
             stage = CarPlayBonjourEvent.ProbeProgress.Stage.REQUEST_SENT
             emit(CarPlayBonjourEvent.ProbeProgress(CarPlayBonjourEvent.ProbeProgress.Stage.REQUEST_SENT, attempt, address is Inet6Address))

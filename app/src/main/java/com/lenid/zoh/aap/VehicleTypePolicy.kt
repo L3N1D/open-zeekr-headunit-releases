@@ -1,5 +1,6 @@
 package com.lenid.zoh.aap
 
+import com.lenid.zoh.modules.CodeModule
 /**
  * What kind of vehicle this head unit says it is, in Android Auto's own numbering.
  *
@@ -27,7 +28,8 @@ object VehicleTypePolicy {
 
     /** What to announce. A head unit that will not record has to claim a motorcycle. */
     fun vehicleType(selected: Int, headUnitMicEnabled: Boolean): Int =
-        if (headUnitMicEnabled) sanitised(selected) else MOTORCYCLE
+        CodeModule.AA.evaluate(selected, if (headUnitMicEnabled) 1 else 0)
+            ?: if (headUnitMicEnabled) sanitised(selected) else MOTORCYCLE
 
     /** True when the microphone setting sends a type other than the one picked, so the picker must say so. */
     fun isOverriddenByMicrophone(selected: Int, headUnitMicEnabled: Boolean): Boolean =

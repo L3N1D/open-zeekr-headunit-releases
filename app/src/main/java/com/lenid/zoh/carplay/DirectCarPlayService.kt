@@ -1,9 +1,17 @@
 package com.lenid.zoh.carplay
 
+import com.lenid.zoh.modules.TransportModules
+
+import com.lenid.zoh.modules.ModuleFunction
 import android.app.*
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.*
+import android.view.KeyEvent
+import com.lenid.zoh.aap.decodeAlbumArt
+import com.lenid.zoh.aap.MediaCenterBridge
+import com.lenid.zoh.mirror.ClusterVideo
+import com.lenid.zoh.utils.Settings
 import android.view.Surface
 import androidx.core.app.NotificationCompat
 import com.lenid.zoh.App
@@ -23,12 +31,14 @@ import java.io.File
 class DirectCarPlayService : Service() {
     inner class LocalBinder : Binder() { val service get() = this@DirectCarPlayService }
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private var controller: CarPlayController? = null
+    @Volatile private var controller: CarPlayController? = null
     private var sink: AndroidMediaSink? = null
     private var session: AirPlaySession? = null
     private var starting = false
     private var lease: ConnectionArbiter.ExternalLease? = null
     private var generation = 0
+    private var reconnectGeneration: Int? = null
+    private var reconnectTimeout: Job? = null
     private var surface: Surface? = null
     private var night = false
     private val mutableStatus = MutableStateFlow("")
@@ -39,6 +49,77 @@ class DirectCarPlayService : Service() {
     val running get() = starting || controller != null
     val connected get() = session != null
 
+    private var widget: MediaCenterBridge? = null
+    private var displayedTrack: com.shilapi.xcertplay.media.CarPlayNowPlaying? = null
+    private var artworkJob: Job? = null
+    private var displayedArtwork: ByteArray? = null
+    private var clusterSurface: Surface? = null
+    private val widgetPreference = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == Settings.KEY_MEDIA_WIDGET_TARGET) updateWidget()
+    }
+
+    private fun updateWidget() {
+        val owner = controller
+        if (session == null || owner == null || App.provide(this).settings.mediaWidgetTarget != Settings.MEDIA_WIDGET_DIRECT) {
+            widget?.stop()
+            widget = null
+            displayedTrack = null
+            displayedArtwork = null
+            artworkJob?.cancel()
+            return
+        }
+        if (widget == null) {
+            if (!MediaCenterBridge.isAvailable(this)) return
+            widget = MediaCenterBridge(this, MediaCenterBridge.SOURCE_TYPE_CARPLAY) { key ->
+                val code = ModuleFunction.MEDIA_BUTTON.evaluate(key)
+                val button = when (code) {
+                    0 -> return@MediaCenterBridge
+                    1 -> CarPlayMediaButton.PLAY
+                    2 -> CarPlayMediaButton.PAUSE
+                    3 -> CarPlayMediaButton.NEXT
+                    4 -> CarPlayMediaButton.PREVIOUS
+                    else -> when (key) {
+                        KeyEvent.KEYCODE_MEDIA_PLAY -> CarPlayMediaButton.PLAY
+                        KeyEvent.KEYCODE_MEDIA_PAUSE -> CarPlayMediaButton.PAUSE
+                        KeyEvent.KEYCODE_MEDIA_NEXT -> CarPlayMediaButton.NEXT
+                        KeyEvent.KEYCODE_MEDIA_PREVIOUS -> CarPlayMediaButton.PREVIOUS
+                        else -> return@MediaCenterBridge
+                    }
+                }
+                if (controller === owner && connected) owner.sendMediaButton(button)
+            }.also { it.start() }
+        }
+        val media = owner.nowPlayingSnapshot()
+        val track = media.copy(playing = false, elapsedMillis = null)
+        val artwork = owner.matchingArtworkSnapshot(media.artworkTransferId)?.bytes
+        if (track != displayedTrack || artwork !== displayedArtwork) {
+            displayedTrack = track
+            displayedArtwork = artwork
+            artworkJob?.cancel()
+            val target = widget ?: return
+            target.track(track.title.orEmpty(), track.artist.orEmpty(), track.album.orEmpty(),
+                track.durationMillis ?: 0L, null, null)
+            if (artwork != null) artworkJob = scope.launch {
+                val cover = withContext(Dispatchers.Default) { decodeAlbumArt(artwork) }
+                if (cover != null && widget === target && displayedArtwork === artwork) {
+                    target.track(track.title.orEmpty(), track.artist.orEmpty(), track.album.orEmpty(),
+                        track.durationMillis ?: 0L, cover, artwork.contentHashCode())
+                }
+            }
+        }
+        widget?.playState(media.playing, media.elapsedMillis ?: 0L)
+    }
+
+    private fun updateClusterSurface() {
+        val target = ClusterVideo.companionSurface?.takeIf { it.isValid }
+        if (clusterSurface !== target) {
+            clusterSurface?.let { sink?.clearSurface(111, it) }
+            target?.let { sink?.setSurface(111, it) }
+            clusterSurface = target
+        }
+        controller?.setDashboardMapOutputVisible(target != null)
+    }
+
     override fun attachBaseContext(newBase: android.content.Context) {
         super.attachBaseContext(com.lenid.zoh.utils.LocaleHelper.wrapContext(newBase))
     }
@@ -46,6 +127,7 @@ class DirectCarPlayService : Service() {
     override fun onCreate() {
         super.onCreate()
         currentService = this
+        getSharedPreferences("settings", MODE_PRIVATE).registerOnSharedPreferenceChangeListener(widgetPreference)
         mutableStatus.value = getString(R.string.carplay_ready)
         // Observe the existing status; the diagnostics UI never binds or starts this service.
         scope.launch { status.collect { diagnosticStatus = it } }
@@ -60,7 +142,34 @@ class DirectCarPlayService : Service() {
         }
     }
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_STOP) { stopSession(); stopSelf() }
+        when (intent?.action) {
+            ACTION_STOP -> stopSession()
+            ACTION_RECONNECT -> {
+                if (running) return START_NOT_STICKY
+                showForegroundNotification()
+                val address = intent.getStringExtra(DirectCarPlayActivity.EXTRA_HOME_ADDRESS)
+                val profile = getSharedPreferences("carplay_reconnect", MODE_PRIVATE)
+                val views = profile.getString("views", "").orEmpty().split(",").mapNotNull { pair ->
+                    val parts = pair.split("x")
+                    val w = parts.firstOrNull()?.toIntOrNull()
+                    val h = parts.getOrNull(1)?.toIntOrNull()
+                    if (w != null && h != null && w > 0 && h > 0) CarPlayViewport(w, h) else null
+                }
+                if (address != null && address in Settings.getAutoStartBtMacs(this) &&
+                    knownWirelessPhone(this, address) && views.isNotEmpty()) {
+                    startSession(true, views.first(), views, address)
+                    if (running) {
+                        val attempt = generation
+                        reconnectGeneration = attempt
+                        reconnectTimeout = scope.launch {
+                            delay(120_000L)
+                            if (generation == attempt && session == null) stopSession()
+                        }
+                    }
+                }
+                if (!running) { stopForeground(true); stopSelf(startId) }
+            }
+        }
         return START_NOT_STICKY
     }
     internal fun startSession(wireless: Boolean, size: CarPlayViewport, knownWindows: List<CarPlayViewport>, selectedBluetoothAddress: String? = null) {
@@ -99,10 +208,15 @@ class DirectCarPlayService : Service() {
                     val v = if (i == 0) ((b.toInt() and 0xfc) or 2) else b.toInt() and 0xff
                     "%02X".format(v)
                 }.joinToString(":")
-                val renderer = AndroidMediaSink(surface = surface, videoWidth = canvas.width,
+                val cluster = ClusterVideo.wanted(this@DirectCarPlayService)?.let { shape ->
+                    AirPlayDisplayConfig(shape.contentWidth.coerceAtLeast(8), shape.contentHeight.coerceAtLeast(8),
+                        fps = 30, primaryInputDevice = 0, features = 0, initialUrl = CarPlayClusterDisplay.MAP_URL)
+                }
+                val renderer = AndroidMediaSink(surface = null, videoWidth = canvas.width,
                     videoHeight = canvas.height, context = this@DirectCarPlayService, audioFocusEnabled = true)
                 sink = renderer
-                val config = AirPlayConfig(deviceName = "Open Zeekr Headunit", deviceId = deviceId,
+                surface?.let { renderer.setSurface(110, it) }
+                val config = AirPlayConfig(transportIo = TransportModules.carPlay, deviceName = "Open Zeekr Headunit", deviceId = deviceId,
                     btMac = deviceId, sourceVersion = "950.7.1", microphone = true,
                     manufacturer = "Open Zeekr Headunit", model = "Zeekr", oemLabel = "Open Headunit",
                     ultraFeatures = if (ultra) CarPlayUltra.DEFAULT_FEATURES else emptySet(),
@@ -110,6 +224,7 @@ class DirectCarPlayService : Service() {
                         id = "version", label = getString(R.string.carplay_vehicle_version), symbol = "info.circle",
                         value = com.lenid.zoh.BuildConfig.VERSION_NAME,
                         section = CarPlayVehicleState.Section("zoh", "Open Zeekr Headunit"))) else emptyList(),
+                    cluster = cluster,
                     main = AirPlayDisplayConfig(canvas.width, canvas.height, fps = 30,
                         viewAreas = areas.map { AirPlayViewArea(it.width, it.height) }))
                 val labPort = if (com.lenid.zoh.BuildConfig.DEBUG &&
@@ -129,14 +244,25 @@ class DirectCarPlayService : Service() {
                         override val wantsTrace = trace
                         override fun onSessionActive(active: AirPlaySession) { scope.launch {
                             if (attempt != generation) return@launch
+                            reconnectTimeout?.cancel()
                             session = active
+                            if (wireless) controller?.connectedWirelessAddress?.let(::rememberWirelessPhone)
+                            updateWidget()
                             com.lenid.zoh.utils.ConnectionJournal.record(this@DirectCarPlayService, "CP:connected")
                             scope.launch(Dispatchers.IO) { active.setNightMode(night) }
                             controller?.showViewArea(areaIndex)
                             mutableStatus.value = getString(R.string.carplay_connected)
                         } }
                         override fun onSessionEnded(active: AirPlaySession) { scope.launch {
-                            if (session === active) { com.lenid.zoh.utils.ConnectionJournal.record(this@DirectCarPlayService, "CP:disconnected"); session = null; mutableStatus.value = getString(R.string.carplay_waiting) }
+                            if (session !== active) return@launch
+                            if (reconnectGeneration == attempt) {
+                                stopSession()
+                            } else {
+                                com.lenid.zoh.utils.ConnectionJournal.record(this@DirectCarPlayService, "CP:disconnected")
+                                session = null
+                                updateWidget()
+                                mutableStatus.value = getString(R.string.carplay_waiting)
+                            }
                         } }
                         override fun onHostUiRequested(session: AirPlaySession) {
                             // Do not open a fullscreen activity from an iPhone Home event.
@@ -148,7 +274,10 @@ class DirectCarPlayService : Service() {
                                 R.string.carplay_connected else CarPlayDiagnostics.message(state))
                         }
                     }, loadPairRecord = store::lockdown, savePairRecord = store::saveLockdown,
-                    clearPairRecord = store::clearLockdown)
+                    clearPairRecord = store::clearLockdown, connectionAction = { ModuleFunction.CONNECT_ACTION.evaluate(it) })
+                controller?.artworkListener = { _, _ -> scope.launch { if (attempt == generation) updateWidget() } }
+                controller?.nowPlayingListener = { scope.launch { if (attempt == generation) updateWidget() } }
+                updateClusterSurface()
                 starting = false
                 controller?.start()
             } catch (e: Exception) {
@@ -175,10 +304,15 @@ class DirectCarPlayService : Service() {
         scope.launch(Dispatchers.IO) { active?.setNightMode(isNight) }
     }
     fun stopSession() {
+        reconnectTimeout?.cancel()
+        reconnectTimeout = null
+        reconnectGeneration = null
         if (session != null) com.lenid.zoh.utils.ConnectionJournal.record(this, "CP:disconnected")
         generation++; starting = false
         val oldController = controller; val oldSink = sink
         controller = null; sink = null; session = null; areaIndex = 0
+        clusterSurface = null
+        updateWidget()
         closeTransport(oldController, oldSink)
         stopForeground(true)
         stopSelf()
@@ -187,10 +321,13 @@ class DirectCarPlayService : Service() {
     override fun onDestroy() {
         val oldController = controller; val oldSink = sink
         generation++; controller = null; sink = null; session = null
+        clusterSurface = null
+        updateWidget()
         closeTransport(oldController, oldSink)
         scope.cancel()
         if (currentService === this) currentService = null
         diagnosticStatus = ""
+        getSharedPreferences("settings", MODE_PRIVATE).unregisterOnSharedPreferenceChangeListener(widgetPreference)
         super.onDestroy()
     }
     private fun closeTransport(oldController: CarPlayController?, oldSink: AndroidMediaSink?) {
@@ -206,6 +343,10 @@ class DirectCarPlayService : Service() {
     }
     private fun foreground() {
         startService(Intent(this, javaClass))
+        showForegroundNotification()
+    }
+
+    private fun showForegroundNotification() {
         val manager = getSystemService(NotificationManager::class.java)
         if (Build.VERSION.SDK_INT >= 26) manager.createNotificationChannel(
             NotificationChannel("direct-carplay", "CarPlay", NotificationManager.IMPORTANCE_LOW))
@@ -216,8 +357,23 @@ class DirectCarPlayService : Service() {
             .setContentText(getString(R.string.carplay_notification)).setOngoing(true)
             .addAction(0, getString(R.string.carplay_stop), stop).build())
     }
+    private fun rememberWirelessPhone(address: String) {
+        val prefs = getSharedPreferences("carplay_reconnect", MODE_PRIVATE)
+        val phones = prefs.getStringSet("phones", emptySet()).orEmpty()
+        prefs.edit().putStringSet("phones", phones + address)
+            .putString("views", areas.joinToString(",") { "${it.width}x${it.height}" }).apply()
+    }
+
     companion object {
         @Volatile private var currentService: DirectCarPlayService? = null
+        fun knownWirelessPhone(context: android.content.Context, address: String): Boolean =
+            address in context.getSharedPreferences("carplay_reconnect", MODE_PRIVATE)
+                .getStringSet("phones", emptySet()).orEmpty()
+        fun clusterSurfaceChanged() {
+            currentService?.let { service -> service.scope.launch { service.updateClusterSurface() } }
+        }
+        fun clusterStreaming() = currentService?.controller?.dashboardMapStreaming() == true
+        fun clusterSize() = currentService?.controller?.configuredClusterSize()
         fun sessionRunning(): Boolean = currentService?.running == true
         fun refreshCurrentPicture(): Boolean {
             val service = currentService ?: return false
@@ -225,6 +381,7 @@ class DirectCarPlayService : Service() {
             service.sink?.refreshPicture(110) ?: return false
             return true
         }
+        internal const val ACTION_RECONNECT = "com.lenid.zoh.carplay.RECONNECT"
         private const val ACTION_STOP = "com.lenid.zoh.carplay.STOP"
         @Volatile var diagnosticStatus: String = ""
             private set

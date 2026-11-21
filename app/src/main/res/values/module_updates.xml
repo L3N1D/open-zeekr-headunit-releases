@@ -13,4 +13,6 @@
     <string name="module_partial">Some modules could not be updated</string>
     <string name="module_home_pending">%1$s updates on next app start</string>
     <string name="module_home_multiple">Modules ready for next start: %1$d</string>
+    <string name="module_versions">Profile v%1$d · Code v%2$d</string>
+    <string name="module_check_now">Check component updates</string>
 </resources>

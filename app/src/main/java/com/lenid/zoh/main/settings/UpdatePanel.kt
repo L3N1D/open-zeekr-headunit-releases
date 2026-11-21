@@ -36,6 +36,7 @@ class UpdatePanel(private val fragment: Fragment) {
     private var status = Status.IDLE
     private var info: UpdateInfo? = null
     private var percent = 0
+    private var checkingModules = false
     private var catalogStatus = 0
     private var notesOpen = false
     private var view: View? = null
@@ -53,6 +54,10 @@ class UpdatePanel(private val fragment: Fragment) {
                 render()
             }
         }
+        row.findViewById<MaterialButton>(R.id.checkModulesButton).apply {
+            visibility = if (UpdateChecker.isPlayStoreInstallation(context)) View.GONE else View.VISIBLE
+            setOnClickListener { checkModules() }
+        }
         bindSwitch(row, R.id.updateAtStartRow, R.id.updateAtStartSwitch, UpdatePrompt.checkAtStartEnabled(row.context)) {
             UpdatePrompt.setCheckAtStart(row.context, it)
         }
@@ -60,7 +65,10 @@ class UpdatePanel(private val fragment: Fragment) {
             CrashJournal.setSendReports(row.context, it)
         }
         render()
-        if (status == Status.IDLE) check()
+        if (status == Status.IDLE) {
+            check()
+            if (!UpdateChecker.isPlayStoreInstallation(row.context)) checkModules()
+        }
     }
 
     private fun bindSwitch(row: View, rowId: Int, switchId: Int, value: Boolean, onChange: (Boolean) -> Unit) {
@@ -77,7 +85,6 @@ class UpdatePanel(private val fragment: Fragment) {
         status = Status.CHECKING
         render()
         fragment.lifecycleScope.launch {
-            val modules = !UpdateChecker.isPlayStoreInstallation(context)
             val result = UpdateChecker.check(context)
             result.onSuccess {
                 UpdatePrompt.noteChecked(context, it)
@@ -87,8 +94,20 @@ class UpdatePanel(private val fragment: Fragment) {
                 status = Status.FAILED
             }
             render()
-            if (modules) {
-                catalogStatus = com.lenid.zoh.utils.ModuleUpdates.refresh(context.applicationContext)
+        }
+    }
+
+    private fun checkModules() {
+        if (checkingModules) return
+        val context = fragment.context?.applicationContext ?: return
+        checkingModules = true
+        catalogStatus = R.string.update_status_checking
+        render()
+        fragment.lifecycleScope.launch {
+            try {
+                catalogStatus = com.lenid.zoh.utils.ModuleUpdates.refresh(context)
+            } finally {
+                checkingModules = false
                 render()
             }
         }
@@ -137,6 +156,7 @@ class UpdatePanel(private val fragment: Fragment) {
     private fun render() {
         val row = view ?: return
         val context = row.context
+        row.findViewById<MaterialButton>(R.id.checkModulesButton).isEnabled = !checkingModules
         row.findViewById<TextView>(R.id.moduleProfiles).apply {
             text = listOfNotNull(context.getString(R.string.module_header),
                 com.lenid.zoh.utils.ModuleUpdates.describe(context),

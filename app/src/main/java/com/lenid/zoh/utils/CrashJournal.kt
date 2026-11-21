@@ -199,6 +199,7 @@ object CrashJournal {
         append("Device: ").append(Build.MANUFACTURER).append(' ').append(Build.MODEL)
             .append(", Android ").append(Build.VERSION.RELEASE).append('\n')
         append("Time: ").append(stamp(System.currentTimeMillis())).append('\n')
+        if (appVersionKnown) append("Code modules: ").append(JSONObject(com.lenid.zoh.modules.CodeModules.revisions())).append('\n')
         if (appVersionKnown) append("Modules: ").append(JSONObject(ModuleUpdates.activeRevisions())).append('\n')
         append('\n')
     }
@@ -355,6 +356,9 @@ object CrashJournal {
                 val modules = header.lastOrNull()?.takeIf { it.startsWith("Modules: ") }
                     ?.let { runCatching { JSONObject(it.removePrefix("Modules: ")) }.getOrNull() }
                 if (modules != null) details.put("module_revisions", modules)
+                header.singleOrNull { it.startsWith("Code modules: ") }?.let {
+                    runCatching { JSONObject(it.removePrefix("Code modules: ")) }.getOrNull()
+                }?.let { details.put("code_module_revisions", it) }
             }
             put("extra", details)
         }

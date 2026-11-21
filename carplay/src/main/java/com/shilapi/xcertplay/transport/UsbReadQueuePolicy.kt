@@ -17,7 +17,7 @@ internal const val USBFS_BULK_URB_CEILING_BYTES = 16 * 1024
  * cached successful size reduced the first submission. Short regions are never retried.
  * Call under the pipe's state lock, including publication, queueing and the open-state checks.
  */
-internal class UsbReadQueuePolicy(private val queueCeiling: Int? = null) {
+internal class UsbReadQueuePolicy(private val queueCeiling: Int? = null, private val io: TransportIo = TransportIo.DEFAULT, private val packetSize: Int = 1) {
     private var successfulLimit: Int? = null
 
     fun queue(buffer: ByteBuffer, checkOpen: () -> Unit, submit: (ByteBuffer) -> Boolean): UsbReadQueueResult {
@@ -26,9 +26,9 @@ internal class UsbReadQueuePolicy(private val queueCeiling: Int? = null) {
         val position = buffer.position()
         val originalLimit = buffer.limit()
         val originalRemaining = buffer.remaining()
-        val firstBytes = minOf(
+        val firstBytes = io.queueBytes(minOf(
             originalRemaining, successfulLimit ?: originalRemaining, queueCeiling ?: originalRemaining,
-        )
+        ), packetSize)
         buffer.limit(position + firstBytes)
         if (submitUnchanged(buffer, position, firstBytes, submit)) {
             return UsbReadQueueResult(true, firstBytes)
@@ -74,14 +74,14 @@ internal class UsbReadQueuePolicy(private val queueCeiling: Int? = null) {
         private const val COMPATIBILITY_BYTES = USBFS_BULK_URB_CEILING_BYTES
         private const val MIN_COMPATIBILITY_BYTES = 2 * 1024
 
-        fun forCurrentPlatform(): UsbReadQueuePolicy = UsbReadQueuePolicy(
+        fun forCurrentPlatform(io: TransportIo = TransportIo.DEFAULT, packetSize: Int = 1): UsbReadQueuePolicy = UsbReadQueuePolicy(
             // Android 7 uses queue(ByteBuffer, Int); Android 9 removed the new queue's bound.
             // Only API 26/27 require a ceiling before queueing, rather than a retry on false.
             if (Build.VERSION.SDK_INT in Build.VERSION_CODES.O until Build.VERSION_CODES.P) {
                 USBFS_BULK_URB_CEILING_BYTES
             } else {
                 null
-            },
+            }, io, packetSize,
         )
     }
 }

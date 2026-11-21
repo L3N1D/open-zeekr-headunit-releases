@@ -102,6 +102,7 @@ class SettingsActivity : BaseActivity() {
         requestedOrientation = Settings(this).screenOrientation.androidOrientation
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        ModuleRestartActivity.observe(this)
         ContextCompat.registerReceiver(this, setupExitReceiver, IntentFilter().apply {
             addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)
             addAction(Intent.ACTION_SCREEN_OFF)

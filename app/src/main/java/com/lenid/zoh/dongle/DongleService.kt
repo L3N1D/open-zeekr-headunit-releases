@@ -1,5 +1,6 @@
 package com.lenid.zoh.dongle
 
+import com.lenid.zoh.modules.CodeModule
 import com.lenid.zoh.connection.usb.UsbSelfGrant
 import android.Manifest
 import android.app.PendingIntent
@@ -181,7 +182,9 @@ class DongleService : Service() {
         val (w, h) = if (fixed.size == 2) fixed[0] to fixed[1]
             else ((screenW * scale).toInt() / 8) * 8 to ((screenH * scale).toInt() / 8) * 8
         val dpi = if (settings.dpi > 0) settings.dpi
-            else (resources.displayMetrics.densityDpi * scale).toInt().coerceIn(120, 320)
+            else (resources.displayMetrics.densityDpi * scale).toInt().let {
+                CodeModule.AUTOKIT.evaluate(it) ?: it.coerceIn(120, 320)
+            }
         val cfg = DongleConfig(w, h, settings.fps, dpi, isNight(), settings.rightHandDrive, settings.wifi5g,
             settings.dongleMic, settings.bluetoothAudio, settings.mediaDelay, settings.dongleName)
         val old = config

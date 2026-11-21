@@ -13,4 +13,6 @@
     <string name="module_partial">Часть модулей не удалось обновить</string>
     <string name="module_home_pending">%1$s обновится при следующем запуске</string>
     <string name="module_home_multiple">Модулей к следующему запуску: %1$d</string>
+    <string name="module_versions">Профиль v%1$d · Код v%2$d</string>
+    <string name="module_check_now">Проверить обновления компонентов</string>
 </resources>

@@ -19,6 +19,9 @@ data class DongleConfig(
     val dongleName: String = "Zeekr",
 )
 
+// Ordinals form the signed module ABI. Keep existing values stable.
+private enum class DongleOpenStep { DPI, OPEN, NIGHT, DRIVE_SIDE, CHARGE, NAME, SETTINGS, ENABLE_WIFI, BAND, MIC, AUDIO, CONNECT }
+
 /** One session with the dongle over [link]. [onMessage] is called on the reader thread. */
 class DongleSession(
     private val link: DongleTransport,
@@ -36,23 +39,34 @@ class DongleSession(
     }
 
     private fun handshake(c: DongleConfig) {
-        sendFile("/tmp/screen_dpi", DongleProtocol.int(c.dpi))
-        send(DongleProtocol.OPEN, DongleProtocol.open(c.width, c.height, c.fps))
-        setNight(c.night)
-        sendFile("/tmp/hand_drive_mode", DongleProtocol.int(if (c.rightHandDrive) 1 else 0))
-        sendFile("/tmp/charge_mode", DongleProtocol.int(1))
-        sendFile("/etc/box_name", c.dongleName.toByteArray())
-        val settings = JSONObject()
-            .put("mediaDelay", c.mediaDelay)
-            .put("syncTime", System.currentTimeMillis() / 1000)
-            .put("androidAutoSizeW", c.width)
-            .put("androidAutoSizeH", c.height)
-        send(DongleProtocol.BOX_SETTINGS, settings.toString().toByteArray())
-        command(DongleProtocol.CMD_WIFI_ENABLE)
-        command(if (c.wifi5g) DongleProtocol.CMD_WIFI_5G else DongleProtocol.CMD_WIFI_24G)
-        command(if (c.dongleMic) DongleProtocol.CMD_MIC_DONGLE else DongleProtocol.CMD_MIC_HOST)
-        command(if (c.bluetoothAudio) DongleProtocol.CMD_AUDIO_BT else DongleProtocol.CMD_AUDIO_USB)
-        command(DongleProtocol.CMD_WIFI_CONNECT)
+        val steps = DongleOpenStep.entries
+        val order = steps.map { step ->
+            com.lenid.zoh.modules.ModuleFunction.OPEN_STEP.evaluate(step.ordinal) ?: step.ordinal
+        }
+        // Validate the entire plan before sending the first packet.
+        val plan = if (order.distinct().size == steps.size && order.last() == DongleOpenStep.CONNECT.ordinal)
+            order.map { steps[it] } else steps
+        for (step in plan) {
+            when (step) {
+                DongleOpenStep.DPI -> sendFile("/tmp/screen_dpi", DongleProtocol.int(c.dpi))
+                DongleOpenStep.OPEN -> send(DongleProtocol.OPEN, DongleProtocol.open(c.width, c.height, c.fps))
+                DongleOpenStep.NIGHT -> setNight(c.night)
+                DongleOpenStep.DRIVE_SIDE -> sendFile("/tmp/hand_drive_mode", DongleProtocol.int(if (c.rightHandDrive) 1 else 0))
+                DongleOpenStep.CHARGE -> sendFile("/tmp/charge_mode", DongleProtocol.int(1))
+                DongleOpenStep.NAME -> sendFile("/etc/box_name", c.dongleName.toByteArray())
+                DongleOpenStep.SETTINGS -> {
+                    val settings = JSONObject().put("mediaDelay", c.mediaDelay)
+                        .put("syncTime", System.currentTimeMillis() / 1000)
+                        .put("androidAutoSizeW", c.width).put("androidAutoSizeH", c.height)
+                    send(DongleProtocol.BOX_SETTINGS, settings.toString().toByteArray())
+                }
+                DongleOpenStep.ENABLE_WIFI -> command(DongleProtocol.CMD_WIFI_ENABLE)
+                DongleOpenStep.BAND -> command(if (c.wifi5g) DongleProtocol.CMD_WIFI_5G else DongleProtocol.CMD_WIFI_24G)
+                DongleOpenStep.MIC -> command(if (c.dongleMic) DongleProtocol.CMD_MIC_DONGLE else DongleProtocol.CMD_MIC_HOST)
+                DongleOpenStep.AUDIO -> command(if (c.bluetoothAudio) DongleProtocol.CMD_AUDIO_BT else DongleProtocol.CMD_AUDIO_USB)
+                DongleOpenStep.CONNECT -> command(DongleProtocol.CMD_WIFI_CONNECT)
+            }
+        }
     }
 
     fun setNight(night: Boolean) = sendFile("/tmp/night_mode", DongleProtocol.int(if (night) 1 else 0))

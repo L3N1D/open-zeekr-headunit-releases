@@ -1,5 +1,7 @@
 package com.lenid.zoh.carplay
 
+import com.lenid.zoh.modules.ModuleFunction
+
 import android.Manifest
 import android.content.*
 import android.content.pm.PackageManager
@@ -136,14 +138,15 @@ class DirectCarPlayActivity : BaseActivity(), TextureView.SurfaceTextureListener
         val panelH = metrics.heightPixels.takeIf { it > 0 } ?: fallback.heightPixels
         val canvas = CarPlayViewport(maxOf(panelW, panelH), minOf(panelW, panelH))
         val chrome = (texture.rootView.height - texture.height).coerceAtLeast(0)
+        val cardHeight = ModuleFunction.WINDOW_HEIGHT.evaluate(chrome) ?: (876 - chrome).coerceAtLeast(240)
         val windows = manager.displays.mapNotNull {
             val m = android.util.DisplayMetrics(); @Suppress("DEPRECATION") it.getRealMetrics(m)
             if (m.widthPixels >= 320 && m.heightPixels > chrome)
                 CarPlayViewport(m.widthPixels, m.heightPixels - chrome) else null
         } + listOf(
             // Both launcher states must be advertised before pairing, even if only one exists now.
-            CarPlayViewport(1275, (876 - chrome).coerceAtLeast(240)),
-            CarPlayViewport(1796, (876 - chrome).coerceAtLeast(240)),
+            CarPlayViewport(1275, cardHeight),
+            CarPlayViewport(1796, cardHeight),
             CarPlayViewport(texture.width.coerceAtLeast(1), texture.height.coerceAtLeast(1)))
         service?.startSession(wireless, canvas, windows,
             intent.getStringExtra(EXTRA_HOME_ADDRESS).takeIf { wireless })

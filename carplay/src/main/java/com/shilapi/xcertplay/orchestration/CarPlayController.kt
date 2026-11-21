@@ -176,6 +176,7 @@ class CarPlayController(
     private val clearPairRecord: () -> Unit = {},
     private val locationProvider: Iap2LocationProvider? = null,
     private val vehicleStatusProvider: com.shilapi.xcertplay.transport.VehicleStatusProvider? = null,
+    private val connectionAction: ((Int) -> Int?)? = null,
 ) : Closeable {
     init {
         require(!config.locationReportingEnabled || locationProvider != null) {
@@ -217,6 +218,7 @@ class CarPlayController(
             } else {
                 IphoneUsbMatcher.appleVendor()
             },
+            io = airPlayConfig.transportIo,
             onDiagnostic = ::connectionDiagnostic,
         )
     }
@@ -258,6 +260,9 @@ class CarPlayController(
 
     private val albumReplayLock = Any()
     private var initialArtworkReplay: com.shilapi.xcertplay.transport.Iap2ArtworkTransfer? = null
+
+    @Volatile var connectedWirelessAddress: String? = null
+        private set
 
     fun nowPlayingSnapshot(): com.shilapi.xcertplay.media.CarPlayNowPlaying =
         synchronized(playbackStatus) { playbackStatus.nowPlaying }
@@ -544,13 +549,7 @@ class CarPlayController(
     /** Re-runs iPhone discovery/bring-up using the already-open MFi session. */
     fun reconnectIphone() = synchronized(lifecycleLock) {
         if (closed) return
-        if (mfiSession == null) {
-            startMfi()
-        } else if (config.transport == CarPlayTransport.WIRELESS) {
-            restartWireless()
-        } else {
-            startIphone()
-        }
+        connectPhone(reconnect = true)
     }
 
     /** A queued move that a newer move of the same fingers may still overwrite. */
@@ -1265,10 +1264,27 @@ class CarPlayController(
             }
             debugLog("location provider prewarmed=$started")
         }
-        if (config.transport == CarPlayTransport.WIRELESS) {
-            startWireless()
-        } else {
-            startIphone()
+        connectPhone(reconnect = false)
+    }
+
+    private fun connectPhone(reconnect: Boolean) {
+        val ready = mfiSession != null
+        val wireless = config.transport == CarPlayTransport.WIRELESS
+        val state = (if (ready) 1 else 0) or (if (wireless) 2 else 0) or (if (reconnect) 4 else 0)
+        val preferred = connectionAction?.invoke(state)
+        // The host retains the selected transport and requires authentication before discovery.
+        val action = when {
+            !ready -> 0
+            !wireless -> 1
+            preferred == 2 || preferred == 3 -> preferred
+            reconnect -> 3
+            else -> 2
+        }
+        when (action) {
+            0 -> if (reconnect) startMfi()
+            1 -> startIphone()
+            2 -> startWireless()
+            3 -> restartWireless()
         }
     }
 
@@ -1547,6 +1563,7 @@ class CarPlayController(
             }
             val stream = synchronized(wirelessResourceLock) {
                 if (isStaleWirelessRun(generation)) return
+                connectedWirelessAddress = device.address
                 try {
                     BluetoothRfcommDuplexStream(socket, ::connectionDiagnostic).also { bluetoothStream = it }
                 } finally {
@@ -2262,7 +2279,7 @@ class CarPlayController(
         )
         val connection = requireUsbManager().openDevice(device)
             ?: throw IphoneUsbException.DeviceUnavailable("Could not open the iPhone NCM connection")
-        return NcmUsbBridge.open(connection, function, onDiagnostic = ::connectionDiagnostic)
+        return NcmUsbBridge.open(connection, function, airPlayConfig.transportIo, onDiagnostic = ::connectionDiagnostic)
     }
 
     private fun runStack(usbSession: UsbMuxPipe, ncm: CarPlayEthernetPipe) {

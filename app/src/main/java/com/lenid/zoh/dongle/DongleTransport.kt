@@ -1,5 +1,9 @@
 package com.lenid.zoh.dongle
 
+import com.shilapi.xcertplay.transport.TransportIo
+
+import com.lenid.zoh.modules.TransportModules
+
 import android.hardware.usb.UsbConstants
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbDeviceConnection
@@ -22,32 +26,40 @@ interface DongleTransport {
 }
 
 class DongleUsbTransport(usb: UsbManager, device: UsbDevice) : DongleTransport {
-    private val iface: UsbInterface = device.getInterface(0)
+    private val io = TransportModules.autoKit
+    private val iface = device.getInterface(0)
     private lateinit var epIn: UsbEndpoint
     private lateinit var epOut: UsbEndpoint
-    private val conn: UsbDeviceConnection
+    private lateinit var conn: UsbDeviceConnection
 
     init {
-        for (i in 0 until iface.endpointCount) {
-            val ep = iface.getEndpoint(i)
-            if (ep.type != UsbConstants.USB_ENDPOINT_XFER_BULK) continue
-            if (ep.direction == UsbConstants.USB_DIR_IN) epIn = ep else epOut = ep
-        }
-        conn = usb.openDevice(device) ?: throw IOException("openDevice failed")
-        if (!conn.claimInterface(iface, true)) { conn.close(); throw IOException("claimInterface failed") }
+        io.open(TransportIo.Path.USB, selectEndpoint = {
+            for (i in 0 until iface.endpointCount) {
+                val ep = iface.getEndpoint(i)
+                if (ep.type != UsbConstants.USB_ENDPOINT_XFER_BULK) continue
+                if (ep.direction == UsbConstants.USB_DIR_IN) epIn = ep else epOut = ep
+            }
+        }, configure = {
+            if (!usb.hasPermission(device)) throw IOException("USB permission missing")
+        }, acquire = {
+            val opened = io.acquireUsb { usb.openDevice(device) } ?: throw IOException("openDevice failed")
+            try {
+                if (!opened.claimInterface(iface, true)) throw IOException("claimInterface failed")
+                conn = opened
+            } catch (error: Throwable) {
+                opened.close()
+                throw error
+            }
+        })
     }
 
-    override fun read(buf: ByteArray, off: Int, len: Int) = conn.bulkTransfer(epIn, buf, off, minOf(len, 65536), 0)
+    override fun read(buf: ByteArray, off: Int, len: Int) =
+        io.transfer(TransportIo.Mode.USB_CAPPED, len, epIn.maxPacketSize) { pos, size -> conn.bulkTransfer(epIn, buf, off + pos, size, 0) }
 
-    override fun write(buf: ByteArray, off: Int, len: Int): Boolean {
-        var o = off
-        while (o < off + len) {
-            val n = conn.bulkTransfer(epOut, buf, o, off + len - o, 1000)
-            if (n <= 0) return false
-            o += n
-        }
-        return true
-    }
+    override fun write(buf: ByteArray, off: Int, len: Int): Boolean =
+        len == 0 || io.transfer(TransportIo.Mode.FULL, len, epOut.maxPacketSize) { pos, size ->
+            conn.bulkTransfer(epOut, buf, off + pos, size, 1000)
+        } == len
 
     override fun close() {
         try { conn.releaseInterface(iface); conn.close() } catch (_: Exception) {}
@@ -55,18 +67,24 @@ class DongleUsbTransport(usb: UsbManager, device: UsbDevice) : DongleTransport {
 }
 
 class DongleTcpTransport(host: String, port: Int) : DongleTransport {
+    private val io = TransportModules.autoKit
     private val socket = Socket().apply {
-        tcpNoDelay = true
-        connect(InetSocketAddress(host, port), 2000)
+        try {
+            lateinit var peer: InetSocketAddress
+            io.open(TransportIo.Path.TCP, { peer = InetSocketAddress(host, port) }, { tcpNoDelay = true }, { connect(peer, 2000) })
+        } catch (error: Throwable) {
+            close()
+            throw error
+        }
     }
     private val input: InputStream = socket.getInputStream()
     private val output: OutputStream = socket.getOutputStream()
 
     override fun read(buf: ByteArray, off: Int, len: Int) =
-        try { input.read(buf, off, len) } catch (_: IOException) { -1 }
+        try { io.read(input, buf, off, len) } catch (_: IOException) { -1 }
 
     override fun write(buf: ByteArray, off: Int, len: Int) =
-        try { output.write(buf, off, len); output.flush(); true } catch (_: IOException) { false }
+        try { io.write(output, buf, off, len); output.flush(); true } catch (_: IOException) { false }
 
     override fun close() {
         try { socket.close() } catch (_: Exception) {}

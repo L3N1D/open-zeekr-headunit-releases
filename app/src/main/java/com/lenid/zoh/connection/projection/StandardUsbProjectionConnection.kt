@@ -1,7 +1,9 @@
 package com.lenid.zoh.connection.projection
 
+
+import com.lenid.zoh.modules.TransportModules
+
 import android.hardware.usb.UsbDevice
-import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbEndpoint
 import android.hardware.usb.UsbInterface
 import android.hardware.usb.UsbManager
@@ -73,24 +75,19 @@ class StandardUsbProjectionConnection(usbMgr: UsbManager, device: UsbDevice) :
 
     @Throws(UsbOpenException::class)
     private fun usbOpen(device: UsbDevice) {
-        var connection: UsbDeviceConnection? = null
         var lastError: Throwable? = null
 
-        for (i in 0 until 3) {
+        val connection = TransportModules.androidAuto.acquireUsb(defaultDelay = { if (it < 3) 1000 else 0 }) { attempt ->
             try {
-                if (!usbMgr.hasPermission(device)) {
+                if (usbMgr.hasPermission(device)) usbMgr.openDevice(device) else {
                     AppLog.w("No permission for USB device ${UsbDeviceCompat.getUniqueName(device)}. Waiting for system popup...")
-                    // We can't request permission here easily because we need a BroadcastReceiver.
-                    // But we can wait and see if the user granted it via the system dialog.
-                } else {
-                    connection = usbMgr.openDevice(device)
-                    if (connection != null) break
+                    null
                 }
             } catch (t: Throwable) {
                 lastError = t
-                AppLog.w("Attempt ${i+1} to openDevice failed: ${t.message}")
+                AppLog.w("Attempt $attempt to openDevice failed: ${t.message}")
+                null
             }
-            if (i < 2) try { Thread.sleep(1000) } catch (_: Exception) {}
         }
 
         usbDeviceConnection = connection ?: throw UsbOpenException(lastError ?: Throwable("openDevice: connection is null (Permission missing?)"))
@@ -205,7 +202,13 @@ class StandardUsbProjectionConnection(usbMgr: UsbManager, device: UsbDevice) :
         val connection = usbDeviceConnection ?: return -1
         val ep = endpointOut ?: return -1
         return try {
-            connection.bulkTransfer(ep, buf, length, timeout)
+            TransportModules.androidAuto.writeUsb(length, timeout, ep.maxPacketSize) { pos, size, budget ->
+                when {
+                    pos == 0 -> connection.bulkTransfer(ep, buf, size, budget)
+                    android.os.Build.VERSION.SDK_INT >= 18 -> connection.bulkTransfer(ep, buf, pos, size, budget)
+                    else -> connection.bulkTransfer(ep, buf.copyOfRange(pos, pos + size), size, budget)
+                }
+            }
         } catch (e: Exception) {
             AppLog.e("USB Write Error: ${e.message}")
             -1
@@ -234,7 +237,7 @@ class StandardUsbProjectionConnection(usbMgr: UsbManager, device: UsbDevice) :
 
                 // 2. Internal buffer empty, read new 16KB chunk from USB
                 val read = try {
-                    connection.bulkTransfer(ep, internalBuffer, internalBuffer.size, timeout)
+                    connection.bulkTransfer(ep, internalBuffer, TransportModules.androidAuto.queueBytes(internalBuffer.size, ep.maxPacketSize), timeout)
                 } catch (e: Exception) {
                     AppLog.e("USB Read Error: ${e.message}")
                     -1

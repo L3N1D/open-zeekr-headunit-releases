@@ -1,3 +1,9 @@
+import groovy.json.JsonSlurper
+import java.security.KeyFactory
+import java.security.MessageDigest
+import java.security.Signature
+import java.security.spec.X509EncodedKeySpec
+import java.util.Base64
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
 import java.io.FileInputStream
@@ -24,8 +30,35 @@ android {
         }
     }
 
-    val copyRootAssets = tasks.register<Copy>("copyRootAssets") {
+    val catalogDir = rootProject.file("code-modules")
+    val envelope = JsonSlurper().parse(catalogDir.resolve("stable-v5.json")) as Map<*, *>
+    val payload = Base64.getDecoder().decode(envelope["payload"] as String)
+    val publicKey = KeyFactory.getInstance("EC").generatePublic(
+        X509EncodedKeySpec(file("src/main/res/raw/module_update_key.der").readBytes()))
+    val verifier = Signature.getInstance("SHA256withECDSA")
+    verifier.initVerify(publicKey)
+    verifier.update(payload)
+    check(verifier.verify(Base64.getDecoder().decode(envelope["signature"] as String))) { "Invalid module catalog signature" }
+    val catalog = JsonSlurper().parse(payload) as Map<*, *>
+    check(catalog["abi"] == 5)
+    val modules = catalog["modules"] as Map<*, *>
+    val moduleIds = listOf("android-auto", "carplay", "zeekr-integration", "ui", "autokit")
+    check(modules.keys == moduleIds.toSet())
+    val moduleRevisions = moduleIds.associateWith { id ->
+        val entry = modules[id] as Map<*, *>
+        val revision = (entry["revision"] as Number).toInt()
+        val bytes = catalogDir.resolve("packages/$id/$revision.wasm").readBytes()
+        check(MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) } == entry["sha256"]) {
+            "Invalid bundled package for $id revision $revision"
+        }
+        revision
+    }
+    val copyRootAssets = tasks.register<Sync>("copyRootAssets") {
         from("${project.rootDir}/CHANGELOG.md", "${project.rootDir}/LICENSE")
+        from(catalogDir.resolve("packages")) {
+            include(moduleRevisions.map { (id, revision) -> "$id/$revision.wasm" })
+            into("code-modules")
+        }
         into("${project.layout.buildDirectory.get().asFile}/generated/assets/root")
     }
 
@@ -93,13 +126,18 @@ android {
         applicationId = "com.lenid.zoh"
         minSdk = 16
         targetSdk = 36
-        versionCode = 136
-        versionName = "1.0.14"
+        versionCode = 137
+        versionName = "1.0.15"
         setProperty("archivesBaseName", "${applicationId}_${versionName}")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         resourceConfigurations += listOf("en", "ru")
         multiDexEnabled = true
         vectorDrawables.useSupportLibrary = true
+
+        for ((id, revision) in moduleRevisions) {
+            val field = "MODULE_REV_" + id.replace('-', '_').uppercase()
+            buildConfigField("int", field, revision.toString())
+        }
 
         // Store available locales in BuildConfig for runtime access
         // This is scanned at build time from values-XX directories

@@ -841,6 +841,14 @@ meta={}
 for name in ['ProjectionConnection.kt','AbstractUsbProjectionConnection.kt','StandardUsbProjectionConnection.kt']:
  p=ROOT/'app/src/main/java/com/lenid/zoh/connection/projection'/name
  shutil.copy2(p,OUT/name);meta[str(p.relative_to(ROOT))]=hashlib.sha256(p.read_bytes()).hexdigest()
+# The lifecycle harness supplies the offline default transport program.
+io_source = ROOT / "carplay/src/main/java/com/shilapi/xcertplay/transport/TransportIo.kt"
+shutil.copy2(io_source, OUT / io_source.name)
+meta[str(io_source.relative_to(ROOT))] = hashlib.sha256(io_source.read_bytes()).hexdigest()
+(OUT / "TransportModules.kt").write_text("""package com.lenid.zoh.modules
+import com.shilapi.xcertplay.transport.TransportIo
+object TransportModules { val androidAuto = TransportIo.DEFAULT }
+""")
 (OUT/'Usb.kt').write_text('''package android.hardware.usb
 import java.util.concurrent.atomic.AtomicInteger
 class UsbDevice{val manufacturerName:String?="fixture";val productName:String?="fixture";val serialNumber:String?="fixture";val deviceName="fixture";val vendorId=0x18d1;val productId=0x2d00;val interfaceCount=1;fun getInterface(i:Int)=UsbInterface()}
@@ -853,6 +861,7 @@ class UsbDeviceConnection{
  fun releaseInterface(i:UsbInterface?):Boolean{releases.incrementAndGet();return true}
  fun claimInterface(i:UsbInterface?,force:Boolean)=true
  fun bulkTransfer(e:UsbEndpoint,b:ByteArray,n:Int,t:Int)=-1
+ fun bulkTransfer(e:UsbEndpoint,b:ByteArray,off:Int,n:Int,t:Int)=-1
 }
 ''')
 (OUT/'UsbCompat.kt').write_text('''package com.lenid.zoh.connection.usb

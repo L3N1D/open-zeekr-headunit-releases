@@ -1,5 +1,7 @@
 package com.lenid.zoh.main
 
+import com.lenid.zoh.modules.ModuleFunction
+
 /**
  * How tall the widget row may be, from the room the home screen has left once the main button
  * keeps everything it needs. Returns 0 when there is not enough room at all, which is what keeps
@@ -20,6 +22,10 @@ object WidgetStripPolicy {
     fun height(roomPx: Int, minPx: Int, maxPx: Int, tallestWidgetPx: Int): Int {
         if (tallestWidgetPx <= 0) return 0
         if (roomPx < minPx) return 0
+        if (minPx in 0..maxPx) {
+            ModuleFunction.WIDGET_HEIGHT.evaluate(roomPx, minPx, maxPx, tallestWidgetPx)
+                ?.takeIf { it == 0 || it in minPx..minOf(roomPx, maxPx) }?.let { return it }
+        }
         return tallestWidgetPx.coerceIn(minPx, minOf(roomPx, maxPx))
     }
 
@@ -30,5 +36,6 @@ object WidgetStripPolicy {
      * forgetting them is how the row ended up taking a few pixels from the main button.
      */
     fun roomFor(columnPx: Int, cardMinPx: Int, appsRowPx: Int, gapPx: Int): Int =
-        columnPx - cardMinPx - appsRowPx - gapPx * 2
+        ModuleFunction.WIDGET_ROOM.evaluate(columnPx, cardMinPx, appsRowPx, gapPx)
+            ?: (columnPx - cardMinPx - appsRowPx - gapPx * 2)
 }

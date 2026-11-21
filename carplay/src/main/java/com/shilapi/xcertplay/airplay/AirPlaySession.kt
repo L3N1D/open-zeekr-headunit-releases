@@ -349,7 +349,7 @@ class AirPlaySession(
         return try {
             val bytes = cipher.encrypt(head.toByteArray(Charsets.US_ASCII) + body)
             val output = socket.getOutputStream()
-            output.write(bytes)
+            config.transportIo.write(output, bytes)
             output.flush()
             true
         } catch (error: Exception) {
@@ -471,7 +471,7 @@ class AirPlaySession(
         var closeReason = "session closed"
         try {
             while (!closed.get()) {
-                val count = input.read(buffer)
+                val count = config.transportIo.read(input, buffer, 0, buffer.size)
                 if (count < 0) {
                     closeReason = "peer EOF"
                     break
@@ -531,7 +531,7 @@ class AirPlaySession(
                     )
                     val wire = RtspMessage.buildResponse(request, response)
                     trace { "airplay control tx wireHex=${wire.toHex()}" }
-                    output.write(cipher?.encrypt(wire) ?: wire)
+                    config.transportIo.write(output, cipher?.encrypt(wire) ?: wire)
                     if (cipher == null && pairVerify.controlKeys != null) {
                         val keys = pairVerify.controlKeys!!
                         cipher = ControlCipher(keys.readKey, keys.writeKey)
@@ -958,7 +958,7 @@ class AirPlaySession(
             var plaintext = ByteArray(0)
             val buffer = ByteArray(READ_CHUNK_BYTES)
             while (!closed.get()) {
-                val count = input.read(buffer)
+                val count = config.transportIo.read(input, buffer, 0, buffer.size)
                 if (count < 0) break
                 val cipher = eventCipher ?: break
                 encrypted += buffer.copyOf(count)
@@ -984,7 +984,7 @@ class AirPlaySession(
                     }
                     trace { "airplay event tx wireHex=${response.toHex()}" }
                     synchronized(eventWriteLock) {
-                        output.write(cipher.encrypt(response))
+                        config.transportIo.write(output, cipher.encrypt(response))
                         output.flush()
                     }
                 }

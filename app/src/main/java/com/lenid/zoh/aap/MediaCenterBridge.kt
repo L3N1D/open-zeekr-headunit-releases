@@ -1,5 +1,7 @@
 package com.lenid.zoh.aap
 
+import com.lenid.zoh.modules.ModuleFunction
+
 import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Context
@@ -42,6 +44,7 @@ import java.io.File
  */
 internal class MediaCenterBridge(
     private val context: Context,
+    private val sourceType: Int = SOURCE_TYPE_ANDROID_AUTO,
     /** Sends a media key (down and up) to the phone; called on the main thread. */
     private val sendKey: (Int) -> Unit,
 ) {
@@ -110,7 +113,7 @@ internal class MediaCenterBridge(
     }
 
     fun stop() {
-        if (!bound) return
+        if (!bound) { thread.quitSafely(); return }
         bound = false
         context.contentResolver.unregisterContentObserver(flagObserver)
         worker.post {
@@ -122,6 +125,7 @@ internal class MediaCenterBridge(
             File(context.cacheDir, ART_DIR).listFiles()?.forEach { it.delete() }
         }
         try { context.unbindService(connection) } catch (_: Exception) {}
+        thread.quitSafely()
     }
 
     /** [art] and [artKey] as for [RouteMapTrackBridge.update]. Main thread. */
@@ -188,8 +192,8 @@ internal class MediaCenterBridge(
         token = callForBinder(binder, SVC, TX_REGISTER_IN_MUSIC) { it.writeString(pkg); it.writeStrongBinder(client) }
         partToken = callForBinder(binder, SVC, TX_REGISTER_ZEEKR_IN_MUSIC) { it.writeString(pkg); it.writeStrongBinder(client) }
         val t = token ?: run { AppLog.w("MediaCenterBridge: no client token"); return }
-        call(binder, SVC, TX_UPDATE_SOURCE_TYPE_LIST) { it.writeStrongBinder(t); it.writeIntArray(intArrayOf(SOURCE_TYPE_ANDROID_AUTO)) }
-        call(binder, SVC, TX_UPDATE_SOURCE_TYPE) { it.writeStrongBinder(t); it.writeInt(SOURCE_TYPE_ANDROID_AUTO) }
+        call(binder, SVC, TX_UPDATE_SOURCE_TYPE_LIST) { it.writeStrongBinder(t); it.writeIntArray(intArrayOf(sourceType)) }
+        call(binder, SVC, TX_UPDATE_SOURCE_TYPE) { it.writeStrongBinder(t); it.writeInt(sourceType) }
         AppLog.i("MediaCenterBridge: registered with the media center")
         sendStartUp()
         push()
@@ -223,7 +227,7 @@ internal class MediaCenterBridge(
         // type. Updates with our type are rejected until it is restored, so do it before every
         // metadata/status push rather than only once during registration.
         clusterGate(true)
-        call(s, SVC, TX_UPDATE_SOURCE_TYPE) { it.writeStrongBinder(t); it.writeInt(SOURCE_TYPE_ANDROID_AUTO) }
+        call(s, SVC, TX_UPDATE_SOURCE_TYPE) { it.writeStrongBinder(t); it.writeInt(sourceType) }
         call(s, SVC, TX_UPDATE_PLAYBACK) { it.writeStrongBinder(t); it.writeStrongBinder(info) }
     }
 
@@ -356,10 +360,16 @@ internal class MediaCenterBridge(
             val r = reply ?: Parcel.obtain()
             r.writeNoException()
             when (code) {
-                1, 41 -> { key(KeyEvent.KEYCODE_MEDIA_PLAY); r.writeInt(1) }
-                2, 42 -> { key(KeyEvent.KEYCODE_MEDIA_PAUSE); r.writeInt(1) }
-                3, 43 -> { key(KeyEvent.KEYCODE_MEDIA_NEXT); r.writeInt(1) }
-                4, 44 -> { key(KeyEvent.KEYCODE_MEDIA_PREVIOUS); r.writeInt(1) }
+                1, 2, 3, 4, 41, 42, 43, 44 -> {
+                    val button = ModuleFunction.MEDIA_KEY.evaluate(code) ?: when (code) {
+                        1, 41 -> KeyEvent.KEYCODE_MEDIA_PLAY
+                        2, 42 -> KeyEvent.KEYCODE_MEDIA_PAUSE
+                        3, 43 -> KeyEvent.KEYCODE_MEDIA_NEXT
+                        else -> KeyEvent.KEYCODE_MEDIA_PREVIOUS
+                    }
+                    if (button in MEDIA_KEYS) key(button)
+                    r.writeInt(if (button in MEDIA_KEYS) 1 else 0)
+                }
                 // Picked in the widget's source list: explicitly retake its focus, then play as
                 // the stock players do. A previous request may have succeeded before another
                 // source was selected, so focusRequested must not suppress this explicit request.
@@ -375,8 +385,8 @@ internal class MediaCenterBridge(
                     r.writeInt(1)
                 }
                 10 -> r.writeStrongBinder(info)
-                11 -> r.writeIntArray(intArrayOf(SOURCE_TYPE_ANDROID_AUTO))
-                12 -> r.writeInt(SOURCE_TYPE_ANDROID_AUTO)
+                11 -> r.writeIntArray(intArrayOf(sourceType))
+                12 -> r.writeInt(sourceType)
                 13 -> r.writeLong(positionMs)
                 14, 28 -> r.writeInt(-1) // no list
                 17 -> r.writeInt(1) // onSourceChanged
@@ -400,7 +410,7 @@ internal class MediaCenterBridge(
                 3 -> reply.writeString(artist)
                 4 -> reply.writeString(album)
                 7 -> reply.writeLong(durationMs)
-                9 -> reply.writeInt(SOURCE_TYPE_ANDROID_AUTO)
+                9 -> reply.writeInt(sourceType)
                 11 -> reply.writeInt(if (playing) 1 else 0)
                 16 -> {
                     val uri = artUri
@@ -440,6 +450,8 @@ internal class MediaCenterBridge(
     }
 
     companion object {
+        private val MEDIA_KEYS = setOf(KeyEvent.KEYCODE_MEDIA_PLAY, KeyEvent.KEYCODE_MEDIA_PAUSE,
+            KeyEvent.KEYCODE_MEDIA_NEXT, KeyEvent.KEYCODE_MEDIA_PREVIOUS)
         const val MEDIA_CENTER = "com.zeekr.mediacenter"
         private const val SERVICE_ACTION = "ecarx.xsf.ZEEKR_MEDIA_CENTER_SERVICE"
 
@@ -466,6 +478,7 @@ internal class MediaCenterBridge(
         private const val TX_REGISTER_ZEEKR_IN_MUSIC = 21
         private const val TX_UPDATE_START_UP = 3
 
+        const val SOURCE_TYPE_CARPLAY = 38
         private const val SOURCE_TYPE_ANDROID_AUTO = 39
 
         private const val FLAG_PAUSE = "handle_pause_action"

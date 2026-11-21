@@ -178,6 +178,7 @@ class MainActivity : BaseActivity() {
         }
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
+        ModuleRestartActivity.observe(this)
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 while (true) {

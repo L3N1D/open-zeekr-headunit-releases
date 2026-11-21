@@ -265,6 +265,12 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/checkModulesButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/module_check_now" />
+
     <TextView
         android:id="@+id/moduleProfiles"
         android:layout_width="match_parent"

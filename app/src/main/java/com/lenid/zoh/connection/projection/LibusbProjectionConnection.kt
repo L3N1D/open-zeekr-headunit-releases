@@ -1,7 +1,9 @@
 package com.lenid.zoh.connection.projection
 
+
+import com.lenid.zoh.modules.TransportModules
+
 import android.hardware.usb.UsbDevice
-import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbEndpoint
 import android.hardware.usb.UsbInterface
 import android.hardware.usb.UsbManager
@@ -57,29 +59,14 @@ class LibusbProjectionConnection(usbMgr: UsbManager,
             }
 
             // Open device
-            var conn: UsbDeviceConnection? = null
-            for (i in 0 until 3) {
-                if (!isConnecting) {
-                    conn?.close()
-                    return@withContext false
-                }
+            val conn = TransportModules.androidAuto.acquireUsb(
+                defaultDelay = { if (it < 3) 1000 else 0 }, current = { isConnecting },
+            ) { attempt ->
                 try {
-                    conn = usbMgr.openDevice(device)
-                    if (conn != null) break
+                    usbMgr.openDevice(device)
                 } catch (t: Throwable) {
-                    AppLog.w("LibusbAccessoryConnection: Attempt ${i + 1} to openDevice failed: ${t.message}")
-                }
-                if (i < 2) {
-                    try {
-                        for (k in 0 until 10) {
-                            if (!isConnecting) {
-                                conn?.close()
-                                return@withContext false
-                            }
-                            Thread.sleep(100)
-                        }
-                    } catch (_: Exception) {
-                    }
+                    AppLog.w("LibusbAccessoryConnection: Attempt $attempt to openDevice failed: ${t.message}")
+                    null
                 }
             }
 
@@ -249,7 +236,10 @@ class LibusbProjectionConnection(usbMgr: UsbManager,
         activeTransfers.incrementAndGet()
         try {
             if (!isConnected) return -1
-            return native.write(buf, length, timeout)
+            return TransportModules.androidAuto.writeUsb(length, timeout, outMaxPacketSize) { pos, size, budget ->
+                val source = if (pos == 0) buf else buf.copyOfRange(pos, pos + size)
+                native.write(source, size, budget)
+            }
         } finally {
             activeTransfers.decrementAndGet()
         }
@@ -296,7 +286,12 @@ class LibusbProjectionConnection(usbMgr: UsbManager,
                 }
 
                 readBuffer.clear()
-                val transferred = native.read(readBuffer, jniTimeout)
+                val size = TransportModules.androidAuto.queueBytes(readBuffer.capacity(), endpointIn?.maxPacketSize ?: 1)
+                val target = if (size == readBuffer.capacity()) readBuffer else {
+                    readBuffer.limit(size)
+                    readBuffer.slice().also { readBuffer.clear() }
+                }
+                val transferred = native.read(target, jniTimeout)
                 if (transferred < 0) {
                     isConnected = false
                     return if (totalReturned > 0) totalReturned else -1
