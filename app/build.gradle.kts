@@ -280,6 +280,8 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.8.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
 
+    androidTestImplementation("androidx.test:runner:1.5.2")
+    androidTestImplementation("junit:junit:4.13.2")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
     // Inline mocks exercise the final Android transport classes on JDK 21.

@@ -200,7 +200,7 @@ class DongleService : Service() {
     private val poll = object : Runnable {
         override fun run() {
             if (dongle == null) tryConnect()
-            main.postDelayed(this, 1000)
+            main.postDelayed(this, com.lenid.zoh.utils.ModuleProfile.AUTOKIT.value.toLong())
         }
     }
 

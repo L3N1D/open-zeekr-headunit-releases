@@ -23,10 +23,13 @@ object UpdatePrompt {
     private var checking = false
     private var lastAttempt: Long? = null
 
-    fun observeAvailability(context: Context, owner: androidx.lifecycle.LifecycleOwner, render: (Boolean) -> Unit) {
+    fun observeAvailability(context: Context, owner: androidx.lifecycle.LifecycleOwner, render: (Boolean, List<com.lenid.zoh.utils.ModuleProfile>) -> Unit) {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        render(prefs.getString("update_for_version", null) == BuildConfig.VERSION_NAME)
-        availability.observe(owner) { render(it) }
+        fun update() = render(prefs.getString("update_for_version", null) == BuildConfig.VERSION_NAME,
+            com.lenid.zoh.utils.ModuleUpdates.pending(context))
+        update()
+        availability.observe(owner) { update() }
+        com.lenid.zoh.utils.ModuleUpdates.changes.observe(owner) { update() }
     }
 
     private const val PREFS = "updates"
@@ -59,6 +62,7 @@ object UpdatePrompt {
         checking = true
         try {
             UpdateChecker.check(activity).onSuccess { noteChecked(activity, it) }
+            com.lenid.zoh.utils.ModuleUpdates.refresh(activity.applicationContext)
         } finally {
             checking = false
         }

@@ -1,0 +1,8 @@
+{
+  "id": "android-auto",
+  "revision": 1,
+  "minCore": 136,
+  "maxCore": 2147483647,
+  "notes": "Контроль состояния проекции",
+  "watchdogPollMs": 1500
+}

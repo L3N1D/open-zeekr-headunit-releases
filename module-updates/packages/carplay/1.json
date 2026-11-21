@@ -1,0 +1,8 @@
+{
+  "id": "carplay",
+  "revision": 1,
+  "minCore": 136,
+  "maxCore": 2147483647,
+  "notes": "Ожидание беспроводного подключения",
+  "firstTcpTimeoutMs": 30000
+}

@@ -1,0 +1,8 @@
+{
+  "id": "autokit",
+  "revision": 1,
+  "minCore": 136,
+  "maxCore": 2147483647,
+  "notes": "Интервал поиска подключённого донгла",
+  "discoveryPollMs": 1000
+}

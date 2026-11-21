@@ -304,7 +304,7 @@ internal class MediaCenterBridge(
         val name = "cover_${key.toUInt()}.jpg"
         dir.listFiles()?.filter { it.name != name }?.forEach { it.delete() }
         val file = File(dir, name)
-        if (!file.exists()) file.outputStream().use { art.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+        if (!file.exists()) file.outputStream().use { art.compress(Bitmap.CompressFormat.JPEG, com.lenid.zoh.utils.ModuleProfile.ZEEKR.value, it) }
         FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file).also { uri ->
             for (pkg in ART_READERS) {
                 try { context.grantUriPermission(pkg, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) } catch (_: Exception) {}

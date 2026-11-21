@@ -59,7 +59,7 @@ internal class ConnectionPanelTransition(
     }
 
     private companion object {
-        const val ENTER_DURATION_MS = 420L
+        val ENTER_DURATION_MS get() = com.lenid.zoh.utils.ModuleProfile.UI.value.toLong()
         const val EXIT_DURATION_MS = 300L
     }
 }

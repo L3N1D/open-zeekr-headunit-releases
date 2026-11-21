@@ -45,6 +45,7 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        com.lenid.zoh.utils.ModuleUpdates.initialize(this)
         // First, so a crash anywhere after this is written down (see CrashJournal).
         com.lenid.zoh.utils.CrashJournal.install(this)
         registerActivityLifecycleCallbacks(this)

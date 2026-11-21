@@ -119,6 +119,7 @@ class DirectCarPlayService : Service() {
                 } else null
                 val runtime = CarPlayRuntimeConfig(labUsbBridgePort = labPort, mfiTarget = MfiTarget.LOCAL,
                     wirelessBluetoothDeviceAddress = selectedBluetoothAddress,
+                    firstTcpTimeoutMillis = com.lenid.zoh.utils.ModuleProfile.CARPLAY.value.toLong(),
                     identification = Iap2IdentificationConfig("Open Zeekr Headunit", "Zeekr", "Open Headunit",
                         identity.pairingId, "1.0", "1.0", 3, externalAccessoryProtocol = "com.lenid.zoh.carplay"),
                     label = "Open Zeekr Headunit", hostName = "open-zeekr-carplay",

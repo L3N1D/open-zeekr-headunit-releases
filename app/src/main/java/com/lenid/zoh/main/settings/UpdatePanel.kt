@@ -36,6 +36,7 @@ class UpdatePanel(private val fragment: Fragment) {
     private var status = Status.IDLE
     private var info: UpdateInfo? = null
     private var percent = 0
+    private var catalogStatus = 0
     private var notesOpen = false
     private var view: View? = null
 
@@ -76,6 +77,7 @@ class UpdatePanel(private val fragment: Fragment) {
         status = Status.CHECKING
         render()
         fragment.lifecycleScope.launch {
+            val modules = !UpdateChecker.isPlayStoreInstallation(context)
             val result = UpdateChecker.check(context)
             result.onSuccess {
                 UpdatePrompt.noteChecked(context, it)
@@ -85,6 +87,10 @@ class UpdatePanel(private val fragment: Fragment) {
                 status = Status.FAILED
             }
             render()
+            if (modules) {
+                catalogStatus = com.lenid.zoh.utils.ModuleUpdates.refresh(context.applicationContext)
+                render()
+            }
         }
     }
 
@@ -131,6 +137,11 @@ class UpdatePanel(private val fragment: Fragment) {
     private fun render() {
         val row = view ?: return
         val context = row.context
+        row.findViewById<TextView>(R.id.moduleProfiles).apply {
+            text = listOfNotNull(context.getString(R.string.module_header),
+                com.lenid.zoh.utils.ModuleUpdates.describe(context),
+                catalogStatus.takeIf { it != 0 }?.let { context.getString(it) }).joinToString("\n\n")
+        }
         val last = UpdatePrompt.lastCheck(context)
         val checked = if (last == 0L) context.getString(R.string.update_never_checked)
             else context.getString(R.string.update_checked_at, DateUtils.formatDateTime(context, last,

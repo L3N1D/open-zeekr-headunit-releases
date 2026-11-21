@@ -149,7 +149,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 }
             }
             if (isProjectionPausedByDevice) {
-                watchdogHandler.postDelayed(this, 1500)
+                watchdogHandler.postDelayed(this, com.lenid.zoh.utils.ModuleProfile.AA.value.toLong())
                 return
             }
             if (!ProjectionWatchdogPolicy.shouldNudgeForFirstFrame(
@@ -165,7 +165,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             // re-request, so the two never double-fire across the overlay transition.
             lastVideoFocusRequestMs = SystemClock.elapsedRealtime()
             sendProjectionVideoFocus(gain = true, unsolicited = true)
-            watchdogHandler.postDelayed(this, 1500)
+            watchdogHandler.postDelayed(this, com.lenid.zoh.utils.ModuleProfile.AA.value.toLong())
         }
     }
     private val reconnectingWatchdog = object : Runnable {

@@ -1321,6 +1321,7 @@ class CarPlayController(
 
             val listenerIdentity = AirPlayListenerIdentity(generation)
             val watchdog = FirstTcpWatchdog(
+                timeoutMillis = config.firstTcpTimeoutMillis,
                 listener = listenerIdentity,
                 schedule = { delay, action ->
                     val future = startupTimer.schedule({ action() }, delay, TimeUnit.MILLISECONDS)

@@ -1,0 +1,16 @@
+<resources>
+    <string name="module_aa">Android Auto</string>
+    <string name="module_carplay">CarPlay</string>
+    <string name="module_zeekr">Интеграция с Zeekr</string>
+    <string name="module_ui">Интерфейс</string>
+    <string name="module_autokit">Поддержка донгла AutoKit</string>
+    <string name="module_header">Модули</string>
+    <string name="module_builtin">Входит в эту версию приложения</string>
+    <string name="module_pending">Версия %1$d готова к следующему запуску приложения</string>
+    <string name="module_requires">Требуется совместимая версия приложения</string>
+    <string name="module_checked">Каталог модулей проверен</string>
+    <string name="module_failed">Каталог модулей недоступен</string>
+    <string name="module_partial">Часть модулей не удалось обновить</string>
+    <string name="module_home_pending">%1$s обновится при следующем запуске</string>
+    <string name="module_home_multiple">Модулей к следующему запуску: %1$d</string>
+</resources>

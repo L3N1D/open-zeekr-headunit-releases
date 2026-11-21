@@ -246,9 +246,16 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         val updateIcon = view.findViewById<ImageView>(R.id.home_update_icon)
         val updateLabel = view.findViewById<TextView>(R.id.home_update_label)
-        UpdatePrompt.observeAvailability(requireContext(), viewLifecycleOwner) { available ->
+        UpdatePrompt.observeAvailability(requireContext(), viewLifecycleOwner) { apk, modules ->
+            val available = apk || modules.isNotEmpty()
             updateIcon.setImageResource(if (available) R.drawable.ic_update_available else R.drawable.ic_refresh_white)
-            updateLabel.setText(if (available) R.string.home_new_update else R.string.home_updates)
+            updateLabel.text = when {
+                apk -> getString(R.string.home_new_update)
+                modules.size == 1 -> getString(R.string.module_home_pending, getString(modules.single().title))
+                modules.size > 1 -> getString(R.string.module_home_multiple, modules.size)
+                else -> getString(R.string.home_updates)
+            }
+            updateLabel.contentDescription = updateLabel.text
         }
         HomeDiagnostics.bind(this)
         renderHome()

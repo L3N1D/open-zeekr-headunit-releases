@@ -198,7 +198,9 @@ object CrashJournal {
         } else append("App: unknown (historical process exit)\n")
         append("Device: ").append(Build.MANUFACTURER).append(' ').append(Build.MODEL)
             .append(", Android ").append(Build.VERSION.RELEASE).append('\n')
-        append("Time: ").append(stamp(System.currentTimeMillis())).append("\n\n")
+        append("Time: ").append(stamp(System.currentTimeMillis())).append('\n')
+        if (appVersionKnown) append("Modules: ").append(JSONObject(ModuleUpdates.activeRevisions())).append('\n')
+        append('\n')
     }
 
     private fun stamp(ms: Long) = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date(ms))
@@ -347,7 +349,14 @@ object CrashJournal {
                 extra?.optString("message")?.takeIf { it.isNotEmpty() } ?: text.lineSequence().firstOrNull().orEmpty()))
             extra?.optJSONArray("breadcrumbs")?.let { put("breadcrumbs", JSONObject().put("values", it)) }
             extra?.optJSONArray("fingerprint")?.let { put("fingerprint", it) }
-            put("extra", JSONObject().put("report", text.take(100_000)))
+            val details = JSONObject().put("report", text.take(100_000))
+            if (recordedVersion != null) {
+                val header = text.take(8192).replace("\r\n", "\n").substringBefore("\n\n").lines()
+                val modules = header.lastOrNull()?.takeIf { it.startsWith("Modules: ") }
+                    ?.let { runCatching { JSONObject(it.removePrefix("Modules: ")) }.getOrNull() }
+                if (modules != null) details.put("module_revisions", modules)
+            }
+            put("extra", details)
         }
     }
 
