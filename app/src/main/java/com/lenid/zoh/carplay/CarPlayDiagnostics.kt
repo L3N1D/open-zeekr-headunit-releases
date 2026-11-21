@@ -26,7 +26,7 @@ internal object CarPlayDiagnostics {
     fun failure(state: CarPlayStatus.Failed): String = when {
         state.wifiResetRequired -> "WIFI_RESET"
         state.knownCause != null -> state.knownCause?.name ?: "CONNECTION"
-        state.startupFailure != null -> "BLUETOOTH_OR_WIFI"
+        state.startupFailure != null -> requireNotNull(state.startupFailure).name
         state.message.contains("Pipe error", true) || state.message.contains("Input/Output", true) -> "USB_IO"
         state.message.contains("timed out", true) || state.message.contains("timeout", true) -> "TIMEOUT"
         else -> "CONNECTION"
@@ -49,10 +49,15 @@ internal object CarPlayDiagnostics {
         is CarPlayStatus.Failed -> when (failure(state)) {
             "USB_IO" -> R.string.carplay_error_usb
             "TIMEOUT" -> R.string.carplay_error_timeout
-            "WIFI_RESET", "CAR_HOTSPOT_OFF", "CAR_HOTSPOT_DETAILS_DIFFER", "HOTSPOT_INTERFACE_NOT_FOUND",
-            "CAR_HOTSPOT_START_TIMED_OUT", "CAR_HOTSPOT_START_FAILED", "WIFI_DIRECT_CHANNEL_UNAVAILABLE" -> R.string.carplay_error_wifi
+            "CAR_HOTSPOT_OFF" -> R.string.carplay_hotspot_off
+            "CAR_HOTSPOT_DETAILS_DIFFER" -> R.string.carplay_hotspot_details
+            "CAR_HOTSPOT_START_TIMED_OUT", "HOTSPOT_NOT_READY" -> R.string.carplay_hotspot_wait
+            "HOTSPOT_INTERFACE_NOT_FOUND" -> R.string.carplay_hotspot_interface
+            "CAR_HOTSPOT_START_FAILED" -> R.string.carplay_hotspot_start
+            "WIFI_DIRECT_BESIDE_HOTSPOT" -> R.string.carplay_hotspot_conflict
+            "WIFI_RESET", "HOTSPOT_CONFIGURATION", "WIFI_DIRECT_CHANNEL_UNAVAILABLE" -> R.string.carplay_error_wifi
             "CHOSEN_IPHONE_NOT_PAIRED", "NO_PAIRED_IPHONE", "IPHONE_NOT_CHOSEN" -> R.string.carplay_stage_pair_phone
-            "BLUETOOTH_OR_WIFI" -> R.string.carplay_error_wireless
+            "FIRST_TCP_TIMEOUT", "BLUETOOTH_UNUSABLE" -> R.string.carplay_error_wireless
             else -> R.string.carplay_error_connection
         }
         else -> R.string.carplay_waiting

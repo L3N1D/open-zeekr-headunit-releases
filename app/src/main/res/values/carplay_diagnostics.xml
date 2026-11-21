@@ -26,4 +26,10 @@
     <string name="carplay_error_wifi">Could not prepare Wi-Fi. Check the connection and hotspot.</string>
     <string name="carplay_error_wireless">Could not establish a wireless connection. Check Bluetooth and Wi-Fi.</string>
     <string name="carplay_error_connection">Could not connect CarPlay. Save the report in CarPlay settings to see the failure stage.</string>
+    <string name="carplay_hotspot_off">Turn on the car hotspot and retry CarPlay.</string>
+    <string name="carplay_hotspot_details">The saved network details differ from the car hotspot settings. Check the network name and password.</string>
+    <string name="carplay_hotspot_wait">The Wi-Fi network did not become ready in time. Retry CarPlay.</string>
+    <string name="carplay_hotspot_interface">CarPlay could not find the hotspot network interface. Check that the hotspot is active.</string>
+    <string name="carplay_hotspot_start">The car hotspot could not start. Check it in the car’s Wi-Fi settings.</string>
+    <string name="carplay_hotspot_conflict">Wi-Fi Direct is unavailable while the car hotspot is active. You can also connect by USB.</string>
 </resources>

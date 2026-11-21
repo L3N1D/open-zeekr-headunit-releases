@@ -26,4 +26,10 @@
     <string name="carplay_error_wifi">Не удалось подготовить Wi-Fi. Проверьте подключение и точку доступа.</string>
     <string name="carplay_error_wireless">Не удалось установить беспроводное соединение. Проверьте Bluetooth и Wi-Fi.</string>
     <string name="carplay_error_connection">Не удалось подключить CarPlay. Сохраните отчёт в настройках CarPlay: в нём указан этап сбоя.</string>
+    <string name="carplay_hotspot_off">Включите точку доступа автомобиля и повторите подключение CarPlay.</string>
+    <string name="carplay_hotspot_details">Сохранённые параметры сети отличаются от настроек точки доступа автомобиля. Проверьте имя сети и пароль.</string>
+    <string name="carplay_hotspot_wait">Сеть Wi-Fi не успела подготовиться. Повторите подключение CarPlay.</string>
+    <string name="carplay_hotspot_interface">CarPlay не нашёл сетевой интерфейс точки доступа. Проверьте, включена ли она.</string>
+    <string name="carplay_hotspot_start">Не удалось включить точку доступа. Проверьте её в настройках Wi-Fi автомобиля.</string>
+    <string name="carplay_hotspot_conflict">При включённой точке доступа Wi-Fi Direct сейчас недоступен. Можно подключиться по USB.</string>
 </resources>
