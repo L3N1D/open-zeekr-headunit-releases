@@ -2032,7 +2032,7 @@ class SettingsFragment : Fragment() {
         items.add(SettingItem.SegmentedButtonSettingEntry(
             stableId = "audioQuality",
             nameResId = R.string.audio_quality,
-            options = listOf(getString(R.string.audio_quality_auto), "PCM", "AAC"),
+            options = listOf(getString(R.string.audio_quality_auto), "Lossless", "AAC"),
             selectedIndex = qualities.indexOf(quality),
             onOptionSelected = { index ->
                 pendingAudioQuality = qualities[index]

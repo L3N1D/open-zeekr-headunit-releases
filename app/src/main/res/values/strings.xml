@@ -749,10 +749,10 @@
     <string name="onb_audio_output_failed">Could not play the test tone: %1$s</string>
     <string name="onb_audio_focus_title">Audio focus</string>
     <string name="onb_audio_more_hint">You can change these again later under Settings → Audio Streams.</string>
-    <string name="audio_quality">Android Auto audio quality</string>
+    <string name="audio_quality">Android Auto transmission quality</string>
     <string name="audio_quality_auto">Auto</string>
     <string name="audio_quality_auto_hint">Selects PCM or AAC to suit the connection.</string>
-    <string name="audio_quality_pcm_hint">Sends uncompressed audio from the phone. Uses more bandwidth.</string>
+    <string name="audio_quality_pcm_hint">Music is sent as stereo PCM at 48 kHz, 16 bit, without additional lossy compression.</string>
     <string name="audio_quality_aac_hint">Compresses audio to reduce bandwidth usage.</string>
     <string name="attach_hw_dsp_equalizer">Hardware DSP Equalizer Trigger</string>
     <string name="attach_hw_dsp_equalizer_description">Attaches a dummy Equalizer effect to the audio session to force hardware DSP routing on specific headunits. Keep disabled if using ViPER4Android / ViperFX or if sound is muffled on older Android versions.</string>

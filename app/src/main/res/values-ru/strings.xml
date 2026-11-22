@@ -273,10 +273,10 @@
     <string name="enable_audio_sink_description">Если выключить этот параметр, головное устройство не будет выводить звук. Звук будет воспроизводиться на телефоне.</string>
     <string name="separate_audio_streams">Раздельные аудиопотоки</string>
     <string name="separate_audio_streams_description">Выделяет каналам «Мультимедиа», «Подсказки» и «Системные звуки» отдельные выходные потоки вместо одного общего мультимедийного потока (может работать некорректно на некоторых устройствах).</string>
-    <string name="audio_quality">Качество звука Android Auto</string>
+    <string name="audio_quality">Качество передачи звука Android Auto</string>
     <string name="audio_quality_auto">Авто</string>
     <string name="audio_quality_auto_hint">Приложение выбирает PCM или AAC с учётом соединения.</string>
-    <string name="audio_quality_pcm_hint">Телефон передаёт звук без дополнительного сжатия. Требуется больше пропускной способности.</string>
+    <string name="audio_quality_pcm_hint">Музыка передаётся в стерео PCM, 48 кГц / 16 бит, без дополнительного сжатия с потерями.</string>
     <string name="audio_quality_aac_hint">Телефон сжимает звук, чтобы снизить нагрузку на соединение.</string>
     <string name="attach_hw_dsp_equalizer">Триггер аппаратного DSP-эквалайзера</string>
     <string name="attach_hw_dsp_equalizer_description">Подключает виртуальный эффект эквалайзера к аудиосеансу для принудительной маршрутизации через аппаратный DSP на некоторых головных устройствах. Оставьте выключенным, если используете ViPER4Android / ViperFX или если звук глухой на старых версиях Android.</string>
