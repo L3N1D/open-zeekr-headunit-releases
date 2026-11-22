@@ -39,7 +39,7 @@ internal class AapAudio(
     private val guidanceVolumeOffset get() = settings.guidanceVolumeOffset
     private val systemVolumeOffset get() = settings.systemVolumeOffset
     private val audioLatencyMultiplier get() = settings.audioLatencyMultiplier
-    private val useAacAudio = sessionConfig.aac
+    private val useAacAudio = sessionConfig.quality == AudioQuality.AAC
     // The codec each sink actually carries, from the phone's Media Sink Setup. The setting alone
     // used to decide, and the band cap now announces AAC the setting knows nothing about.
     private val sinkCodecs = ConcurrentHashMap<Int, AudioSinkCodec>()

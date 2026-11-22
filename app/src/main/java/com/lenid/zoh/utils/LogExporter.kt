@@ -155,7 +155,7 @@ object LogExporter {
             "view:${settings.viewMode.name} forceSw:${settings.forceSoftwareDecoding} " +
             "swDecoder:${settings.softwareVideoDecoder.name} | " +
             // These are saved preferences; AudioMixer separately reports the actual backend.
-            "audioPrefs=aaudio:${settings.useAAudioOutput} aac:${settings.useAacAudio} " +
+            "audioPrefs=aaudio:${settings.useAAudioOutput} quality:${settings.audioQuality} " +
             "latency:${settings.audioLatencyMultiplier} queue:${settings.audioQueueCapacity} | " +
             "wifi=mode:${settings.wifiConnectionMode} strategy:${wifiTransport(settings)} " +
             // The band and the stand-down arm decide how a stuttering capture reads, and both are

@@ -1,5 +1,6 @@
 package com.lenid.zoh.utils
 
+import com.lenid.zoh.aap.AudioQuality
 import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
@@ -1336,9 +1337,13 @@ class Settings(private val context: Context) {
         get() = prefs.getInt("audio-queue-capacity", 50)
         set(value) { prefs.edit().putInt("audio-queue-capacity", value).apply() }
 
-    var useAacAudio: Boolean
-        get() = prefs.getBoolean("use-aac-audio", false)
-        set(value) { prefs.edit().putBoolean("use-aac-audio", value).apply() }
+    var audioQuality: AudioQuality
+        get() {
+            val stored = prefs.getString("audio-quality", null)
+            return AudioQuality.values().firstOrNull { it.name == stored }
+                ?: if (prefs.getBoolean("use-aac-audio", false)) AudioQuality.AAC else AudioQuality.AUTO
+        }
+        set(value) { prefs.edit().putString("audio-quality", value.name).remove("use-aac-audio").apply() }
 
     // Experimental backend: keep AudioTrack unless the user explicitly opts in.
     var useAAudioOutput: Boolean

@@ -1,5 +1,6 @@
 package com.lenid.zoh.aap.protocol.messages
 
+import com.lenid.zoh.aap.AudioQuality
 import android.content.Context
 import com.lenid.zoh.App
 import com.lenid.zoh.aap.AapMessage
@@ -208,7 +209,12 @@ internal class ServiceDiscoveryResponse(context: Context, audioConfig: AudioSess
 
             services.add(input)
 
-            val audioType = if (announcesAac(context, settings, audioConfig.aac)) Media.MediaCodecType.MEDIA_CODEC_AUDIO_AAC_LC else Media.MediaCodecType.MEDIA_CODEC_AUDIO_PCM
+            val useAac = when (audioConfig.quality) {
+                AudioQuality.PCM -> false
+                AudioQuality.AAC -> true
+                AudioQuality.AUTO -> announcesAac(context, settings, false)
+            }
+            val audioType = if (useAac) Media.MediaCodecType.MEDIA_CODEC_AUDIO_AAC_LC else Media.MediaCodecType.MEDIA_CODEC_AUDIO_PCM
 
             // Always add Audio2 (System Sounds) to keep connection alive
             val audio2 = Control.Service.newBuilder().also { service ->

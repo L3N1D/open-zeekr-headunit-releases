@@ -637,7 +637,9 @@
     <!-- Audio stream settings screen -->
     <string name="audio_stream_settings">Audio Streams</string>
     <string name="audio_stream_settings_description">Choose the system stream each Android Auto channel plays on.</string>
-    <string name="audio_stream_settings_info">Android Auto sends audio on three channels — Media, Guidance and System Sounds. Each one is handed to the head unit on a system stream, and which stream you pick decides the volume key it follows and, on many head units, whether the amplifier unmutes for it at all. Use the speaker button to hear a test tone on the stream before saving.</string>
+    <string name="audio_stream_settings_info">The app checks the head unit at startup and refreshes the list when you choose a channel. Only streams with a reported output are listed. Several streams may use the same speakers. Use the speaker button to listen.</string>
+    <string name="audio_detected_routes">Detected output channels: %1$s</string>
+    <string name="audio_routes_unconfirmed">The head unit did not report any output routes. Your saved settings still apply.</string>
     <!-- The three audio channels Android Auto opens. One set of names, used by the Audio Streams
          screen and by the Audio Volume Offset sliders, so both describe the same thing the same way. -->
     <string name="audio_channel_media">Media</string>
@@ -747,8 +749,11 @@
     <string name="onb_audio_output_failed">Could not play the test tone: %1$s</string>
     <string name="onb_audio_focus_title">Audio focus</string>
     <string name="onb_audio_more_hint">You can change these again later under Settings → Audio Streams.</string>
-    <string name="use_aac_audio">Use AAC Audio</string>
-    <string name="use_aac_audio_description">Use AAC codec for audio to save bandwidth (Experimental). On a wireless session running on 2.4 GHz this is on automatically while \"Lower video on a 2.4 GHz link\" is on.</string>
+    <string name="audio_quality">Android Auto audio quality</string>
+    <string name="audio_quality_auto">Auto</string>
+    <string name="audio_quality_auto_hint">Selects PCM or AAC to suit the connection.</string>
+    <string name="audio_quality_pcm_hint">Sends uncompressed audio from the phone. Uses more bandwidth.</string>
+    <string name="audio_quality_aac_hint">Compresses audio to reduce bandwidth usage.</string>
     <string name="attach_hw_dsp_equalizer">Hardware DSP Equalizer Trigger</string>
     <string name="attach_hw_dsp_equalizer_description">Attaches a dummy Equalizer effect to the audio session to force hardware DSP routing on specific headunits. Keep disabled if using ViPER4Android / ViperFX or if sound is muffled on older Android versions.</string>
     <string name="audio_volume_offset">Audio Volume Offset</string>

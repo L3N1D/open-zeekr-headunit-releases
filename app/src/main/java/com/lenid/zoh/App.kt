@@ -153,6 +153,9 @@ class App : Application(), Application.ActivityLifecycleCallbacks {
         com.lenid.zoh.utils.ConnectionJournal.start(this)
         com.lenid.zoh.utils.WakePictureCheck.register(this)
         com.lenid.zoh.utils.SelfPermissionGrant.apply(this)
+        CoroutineScope(Dispatchers.IO).launch {
+            com.lenid.zoh.utils.AudioStreamTester.routedStreams(this@App)
+        }
 
         // Sync auto-start settings to device-protected storage so that
         // BootCompleteReceiver, UsbAttachedActivity, and AutoStartReceiver

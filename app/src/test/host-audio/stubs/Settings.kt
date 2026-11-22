@@ -12,7 +12,10 @@ class Settings {
     var systemVolumeOffset=0
     var audioLatencyMultiplier=2
     var audioQueueCapacity=0
-    var useAacAudio=false
+    var audioQuality = com.lenid.zoh.aap.AudioQuality.AUTO
+    var useAacAudio: Boolean
+        get() = audioQuality == com.lenid.zoh.aap.AudioQuality.AAC
+        set(value) { audioQuality = if (value) com.lenid.zoh.aap.AudioQuality.AAC else com.lenid.zoh.aap.AudioQuality.AUTO }
     var useAAudioOutput=false
     var enableAudioSink=true
     var attachHwDspEqualizer=false

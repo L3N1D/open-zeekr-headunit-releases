@@ -75,7 +75,7 @@ object AudioStreamCatalog {
         synchronized(this) {
             cached?.let { return it }
             val discovered = discover(audioManager)
-            cached = discovered
+            if (discovered.isNotEmpty()) cached = discovered
             return discovered
         }
     }
@@ -134,16 +134,6 @@ object AudioStreamCatalog {
                     (reflected == null || reflected == aosp.name)
 
             entries.add(Entry(id, reflected ?: aosp?.name.takeIf { isStandard }, isStandard))
-        }
-
-        if (entries.isEmpty()) {
-            // Nothing answered - keep the app usable rather than showing an empty picker.
-            AppLog.w("AudioStreamCatalog: no streams could be probed, assuming the AOSP basics")
-            return listOf(
-                Entry(AudioManager.STREAM_MUSIC, "MUSIC", true),
-                Entry(AudioManager.STREAM_VOICE_CALL, "VOICE_CALL", true),
-                Entry(AudioManager.STREAM_NOTIFICATION, "NOTIFICATION", true)
-            )
         }
 
         AppLog.i("AudioStreamCatalog: ${entries.size} streams available " +

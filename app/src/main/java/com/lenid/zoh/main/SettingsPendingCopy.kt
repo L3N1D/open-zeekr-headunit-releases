@@ -1,5 +1,6 @@
 package com.lenid.zoh.main
 
+import com.lenid.zoh.aap.AudioQuality
 import com.lenid.zoh.aap.protocol.messages.BluetoothAnnouncePolicy
 import com.lenid.zoh.connection.wifi.WifiLauncherMode
 import com.lenid.zoh.connection.wifi.direct.StoredP2pIdentity
@@ -34,7 +35,7 @@ class SettingsPendingCopy {
     var enableAudioSink: Boolean? = null
     var staticAudioFocus: Boolean? = null
     var playbackFocusMode: PlaybackFocusPolicy.Mode? = null
-    var useAacAudio: Boolean? = null
+    var audioQuality: AudioQuality? = null
     var useAAudioOutput: Boolean? = null
     var attachHwDspEqualizer: Boolean? = null
     var micInputSource: Int? = null
@@ -112,7 +113,7 @@ class SettingsPendingCopy {
         enableAudioSink = settings.enableAudioSink
         staticAudioFocus = settings.staticAudioFocus
         playbackFocusMode = settings.playbackFocusMode
-        useAacAudio = settings.useAacAudio
+        audioQuality = settings.audioQuality
         useAAudioOutput = settings.useAAudioOutput
         attachHwDspEqualizer = settings.attachHwDspEqualizer
         micInputSource = settings.micInputSource
@@ -191,7 +192,7 @@ class SettingsPendingCopy {
         enableAudioSink != settings.enableAudioSink ||
         staticAudioFocus != settings.staticAudioFocus ||
         playbackFocusMode != settings.playbackFocusMode ||
-        useAacAudio != settings.useAacAudio ||
+        audioQuality != settings.audioQuality ||
         useAAudioOutput != settings.useAAudioOutput ||
         attachHwDspEqualizer != settings.attachHwDspEqualizer ||
         micInputSource != settings.micInputSource ||

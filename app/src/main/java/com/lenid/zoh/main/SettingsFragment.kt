@@ -1,5 +1,6 @@
 package com.lenid.zoh.main
 
+import com.lenid.zoh.aap.AudioQuality
 import android.app.AlertDialog
 import android.content.ActivityNotFoundException
 import android.content.Context
@@ -185,7 +186,7 @@ class SettingsFragment : Fragment() {
     private var pendingEnableAudioSink by pending::enableAudioSink
     private var pendingStaticAudioFocus by pending::staticAudioFocus
     private var pendingPlaybackFocusMode by pending::playbackFocusMode
-    private var pendingUseAacAudio by pending::useAacAudio
+    private var pendingAudioQuality by pending::audioQuality
     private var pendingUseAAudioOutput by pending::useAAudioOutput
     private var pendingAttachHwDspEqualizer by pending::attachHwDspEqualizer
     private var pendingMicInputSource by pending::micInputSource
@@ -525,7 +526,7 @@ class SettingsFragment : Fragment() {
         val focusModeChanged = pendingPlaybackFocusMode != null && pendingPlaybackFocusMode != settings.playbackFocusMode
         pendingPlaybackFocusMode?.let { if (it != settings.playbackFocusMode) settings.playbackFocusMode = it }
         if (focusModeChanged) settings.playbackFocusSelfDefeating = false
-        pendingUseAacAudio?.let { if (it != settings.useAacAudio) settings.useAacAudio = it }
+        pendingAudioQuality?.let { if (it != settings.audioQuality) settings.audioQuality = it }
         pendingUseAAudioOutput?.let { if (it != settings.useAAudioOutput) settings.useAAudioOutput = it }
         pendingAttachHwDspEqualizer?.let { if (it != settings.attachHwDspEqualizer) settings.attachHwDspEqualizer = it }
         pendingMicInputSource?.let { if (it != settings.micInputSource) settings.micInputSource = it }
@@ -673,7 +674,7 @@ class SettingsFragment : Fragment() {
                           pendingEnableAudioSink != settings.enableAudioSink ||
                           pendingStaticAudioFocus != settings.staticAudioFocus ||
                           pendingPlaybackFocusMode != settings.playbackFocusMode ||
-                          pendingUseAacAudio != settings.useAacAudio ||
+                          pendingAudioQuality != settings.audioQuality ||
                           pendingUseAAudioOutput != settings.useAAudioOutput ||
                           pendingAttachHwDspEqualizer != settings.attachHwDspEqualizer ||
                           pendingAudioLatencyMultiplier != settings.audioLatencyMultiplier ||
@@ -2026,15 +2027,25 @@ class SettingsFragment : Fragment() {
             ))
         }
 
-        items.add(SettingItem.ToggleSettingEntry(
-            stableId = "useAacAudio",
-            nameResId = R.string.use_aac_audio,
-            descriptionResId = R.string.use_aac_audio_description,
-            isChecked = pendingUseAacAudio ?: settings.useAacAudio,
-            onCheckedChanged = { isChecked ->
-                pendingUseAacAudio = isChecked
+        val quality = pendingAudioQuality ?: settings.audioQuality
+        val qualities = listOf(AudioQuality.AUTO, AudioQuality.PCM, AudioQuality.AAC)
+        items.add(SettingItem.SegmentedButtonSettingEntry(
+            stableId = "audioQuality",
+            nameResId = R.string.audio_quality,
+            options = listOf(getString(R.string.audio_quality_auto), "PCM", "AAC"),
+            selectedIndex = qualities.indexOf(quality),
+            onOptionSelected = { index ->
+                pendingAudioQuality = qualities[index]
                 checkChanges()
                 updateSettingsList()
+            }
+        ))
+        items.add(SettingItem.InfoBanner(
+            stableId = "audioQualityHint",
+            textResId = when (quality) {
+                AudioQuality.AUTO -> R.string.audio_quality_auto_hint
+                AudioQuality.PCM -> R.string.audio_quality_pcm_hint
+                AudioQuality.AAC -> R.string.audio_quality_aac_hint
             }
         ))
 

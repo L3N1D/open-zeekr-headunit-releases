@@ -126,8 +126,8 @@ android {
         applicationId = "com.lenid.zoh"
         minSdk = 16
         targetSdk = 36
-        versionCode = 138
-        versionName = "1.0.16"
+        versionCode = 139
+        versionName = "1.0.17"
         setProperty("archivesBaseName", "${applicationId}_${versionName}")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         resourceConfigurations += listOf("en", "ru")

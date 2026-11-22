@@ -463,19 +463,12 @@ class OnboardingAudioStep(
     ) {
         button.text = AudioStreamTester.label(activity, get())
         button.setOnClickListener {
-            val labels = AudioStreamTester.labels(activity)
-            MaterialAlertDialogBuilder(activity, R.style.DarkAlertDialog)
-                .setTitle(activity.getString(R.string.audio_stream_pick_title, title()))
-                .setSingleChoiceItems(
-                    labels,
-                    AudioStreamTester.indexOf(activity, get()),
-                ) { dialog, which ->
-                    set(AudioStreamTester.streamAt(activity, which))
-                    button.text = AudioStreamTester.label(activity, get())
-                    dialog.dismiss()
+            activity.lifecycleScope.launch {
+                AudioStreamTester.pick(activity, title(), get()) {
+                    set(it)
+                    button.text = AudioStreamTester.label(activity, it)
                 }
-                .setNegativeButton(R.string.cancel, null)
-                .show()
+            }
         }
         test.setOnClickListener { AudioStreamTester.play(activity, get()) }
     }

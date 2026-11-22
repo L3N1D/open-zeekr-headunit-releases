@@ -1290,6 +1290,7 @@ private fun audioSettingsRegression() {
         "guidance route" to { it.guidanceAudioStream = 3 },
         "system route" to { it.systemAudioStream = 3 },
         "media codec" to { it.useAacAudio = true },
+        "force uncompressed" to { it.audioQuality = com.lenid.zoh.aap.AudioQuality.PCM },
         "sink disabled" to { it.enableAudioSink = false },
         "DSP route" to { it.attachHwDspEqualizer = true }
     )

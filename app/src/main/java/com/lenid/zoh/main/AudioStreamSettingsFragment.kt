@@ -8,6 +8,10 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -74,6 +78,11 @@ class AudioStreamSettingsFragment : Fragment() {
 
         updateSettingsList()
         setupToolbar()
+        viewLifecycleOwner.lifecycleScope.launch {
+            val app = requireContext().applicationContext
+            withContext(Dispatchers.IO) { AudioStreamTester.routedStreams(app) }
+            updateSettingsList()
+        }
     }
 
     private fun setupToolbar() {
@@ -150,14 +159,12 @@ class AudioStreamSettingsFragment : Fragment() {
         items.add(SettingItem.CategoryHeader("audioStreams", R.string.audio_stream_settings))
         items.add(SettingItem.InfoBanner("audioStreamsInfo", R.string.audio_stream_settings_info))
 
-        // Point the vendor streams out rather than leaving them to be noticed. On a head unit that
-        // has them they are usually the interesting answer, and their names ("MUSIC_SECOND (10)")
-        // mean nothing to a user who has not been told where they came from.
-        if (AudioStreamTester.vendorStreamCount(requireContext()) > 0) {
-            items.add(SettingItem.InfoBanner(
-                stableId = "audioStreamsVendorInfo",
-                textResId = R.string.audio_stream_vendor_info
-            ))
+        AudioStreamTester.detectedRoutes?.let { routes ->
+            val summary = if (routes.isEmpty()) getString(R.string.audio_routes_unconfirmed) else
+                getString(R.string.audio_detected_routes, routes.joinToString(", ") {
+                    AudioStreamTester.label(requireContext(), it)
+                })
+            items.add(SettingItem.InfoBanner("detectedAudioRoutes", R.string.audio_detected_routes, summary))
         }
 
         val separate = pendingSeparateAudioStreams ?: false
@@ -222,17 +229,13 @@ class AudioStreamSettingsFragment : Fragment() {
         descriptionResId = descriptionResId,
         value = AudioStreamTester.label(requireContext(), current()),
         onClick = {
-            val labels = AudioStreamTester.labels(requireContext())
-            MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                .setTitle(getString(R.string.audio_stream_pick_title, pickerTitle))
-                .setSingleChoiceItems(labels, AudioStreamTester.indexOf(requireContext(), current())) { dialog, which ->
-                    onPicked(AudioStreamTester.streamAt(requireContext(), which))
+            viewLifecycleOwner.lifecycleScope.launch {
+                AudioStreamTester.pick(requireActivity(), pickerTitle, current()) {
+                    onPicked(it)
                     checkChanges()
-                    dialog.dismiss()
                     updateSettingsList()
                 }
-                .setNegativeButton(R.string.cancel, null)
-                .show()
+            }
         },
         onTest = { AudioStreamTester.play(requireContext(), current()) }
     )

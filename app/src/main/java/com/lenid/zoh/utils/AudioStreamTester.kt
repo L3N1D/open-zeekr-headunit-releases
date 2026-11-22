@@ -1,11 +1,18 @@
 package com.lenid.zoh.utils
 
 import android.content.Context
+import android.media.AudioAttributes
+import android.os.Build
 import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
+import androidx.fragment.app.FragmentActivity
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.lenid.zoh.decoder.audio.CarAudioPlatform
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.lenid.zoh.R
 import com.lenid.zoh.decoder.audio.AudioStreamCatalog
 
@@ -60,16 +67,59 @@ object AudioStreamTester {
     fun streams(context: Context): List<AudioStreamCatalog.Entry> =
         AudioStreamCatalog.available(audioManager(context))
 
-    /** Picker labels, in the same order as [streams]. */
-    fun labels(context: Context): Array<String> =
-        streams(context).map { label(context, it) }.toTypedArray()
+    // Android 11 car frameworks expose the audio policy's output-device mask per legacy stream.
+    private val legacyRouteQuery by lazy {
+        try {
+            Class.forName("android.media.AudioSystem").getMethod("getDevicesForStream", Int::class.javaPrimitiveType)
+        } catch (_: ReflectiveOperationException) { null }
+          catch (_: SecurityException) { null }
+    }
 
-    /** Position of a stored stream in the picker, or 0 when this device does not have it. */
-    fun indexOf(context: Context, stream: Int): Int =
-        streams(context).indexOfFirst { it.id == stream }.coerceAtLeast(0)
+    @Volatile
+    var detectedRoutes: List<AudioStreamCatalog.Entry>? = null
+        private set
 
-    fun streamAt(context: Context, index: Int): Int =
-        streams(context).getOrNull(index)?.id ?: AudioManager.STREAM_MUSIC
+    @Synchronized
+    fun routedStreams(context: Context): List<AudioStreamCatalog.Entry> {
+        val manager = audioManager(context)
+        val routes = streams(context).filter { entry ->
+            val legacy = try {
+                (legacyRouteQuery?.invoke(null, entry.id) as? Int)
+            } catch (_: ReflectiveOperationException) { null }
+              catch (_: RuntimeException) { null }
+            if (legacy != null) return@filter legacy != 0
+            if (Build.VERSION.SDK_INT < 33) return@filter false
+            try {
+                val attributes = AudioAttributes.Builder().apply {
+                    if (entry.id == CarAudioPlatform.NAVIGATION_STREAM && CarAudioPlatform.hasZeekrAudioRoutes) {
+                        setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+                    } else {
+                        setLegacyStreamType(entry.id)
+                    }
+                }.build()
+                manager.getAudioDevicesForAttributes(attributes).any { it.isSink }
+            } catch (_: RuntimeException) { false }
+        }
+        detectedRoutes = routes
+        return routes
+    }
+
+    suspend fun pick(activity: FragmentActivity, title: String, current: Int, onPicked: (Int) -> Unit) {
+        val routes = withContext(Dispatchers.IO) { routedStreams(activity.applicationContext) }
+        val dialog = MaterialAlertDialogBuilder(activity, R.style.DarkAlertDialog)
+            .setTitle(activity.getString(R.string.audio_stream_pick_title, title))
+            .setNegativeButton(R.string.cancel, null)
+        if (routes.isEmpty()) {
+            dialog.setMessage(R.string.audio_routes_unconfirmed)
+        } else {
+            val labels = routes.map { label(activity, it) }.toTypedArray()
+            dialog.setSingleChoiceItems(labels, routes.indexOfFirst { it.id == current }) { picker, index ->
+                picker.dismiss()
+                onPicked(routes[index].id)
+            }
+        }
+        dialog.show()
+    }
 
     /**
      * How a stored stream reads in a row. A stream the device does not have still gets a label
@@ -82,7 +132,7 @@ object AudioStreamTester {
         return label(context, entry)
     }
 
-    private fun label(context: Context, entry: AudioStreamCatalog.Entry): String {
+    fun label(context: Context, entry: AudioStreamCatalog.Entry): String {
         if (entry.isStandard) {
             standardNameRes(entry.id)?.let { return context.getString(it) }
         }
@@ -92,9 +142,6 @@ object AudioStreamTester {
         // appear in logs and in whatever the head unit's own tooling calls them.
         return context.getString(R.string.audio_stream_vendor_format, name, entry.id)
     }
-
-    /** How many of this device's streams are not stock Android. */
-    fun vendorStreamCount(context: Context): Int = streams(context).count { !it.isStandard }
 
     private fun standardNameRes(id: Int): Int? = when (id) {
         AudioManager.STREAM_VOICE_CALL -> R.string.audio_stream_voice_call

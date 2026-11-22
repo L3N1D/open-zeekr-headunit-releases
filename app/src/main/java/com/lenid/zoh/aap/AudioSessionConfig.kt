@@ -3,6 +3,8 @@ package com.lenid.zoh.aap
 import com.lenid.zoh.decoder.audio.PlaybackFocusPolicy
 import com.lenid.zoh.utils.Settings
 
+enum class AudioQuality { AUTO, PCM, AAC }
+
 /**
  * Settings which need a fresh projection session, not just new output tracks. Codec changes
  * require ServiceDiscovery/Setup again; focus and routing must change together with the mixer.
@@ -17,14 +19,14 @@ internal data class AudioSessionConfig(
     val mediaStream: Int,
     val guidanceStream: Int,
     val systemStream: Int,
-    val aac: Boolean,
+    val quality: AudioQuality,
     val attachHwDspEqualizer: Boolean
 ) {
     companion object {
         fun from(settings: Settings) = AudioSessionConfig(
             settings.enableAudioSink, settings.staticAudioFocus, settings.playbackFocusMode,
             settings.separateAudioStreams, settings.mediaAudioStream, settings.guidanceAudioStream,
-            settings.systemAudioStream, settings.useAacAudio, settings.attachHwDspEqualizer
+            settings.systemAudioStream, settings.audioQuality, settings.attachHwDspEqualizer
         )
     }
 }
