@@ -13,6 +13,8 @@ import android.os.Build
 import com.lenid.zoh.utils.AppLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.EOFException
+import java.io.InterruptedIOException
 import java.io.DataInputStream
 import java.io.IOException
 import java.io.OutputStream
@@ -237,31 +239,68 @@ class SocketProjectionConnection(
         }
     }
 
+    /** Immutable snapshot of the last failed read, consumed by the framing reader's error report. */
+    internal data class ReadFailure(
+        val cause: IOException,
+        val bytesRead: Int,
+        val requested: Int,
+        val timeoutMs: Int,
+        val full: Boolean,
+    ) {
+        fun description(): String = "Socket read: received=$bytesRead, requested=$requested, " +
+            "timeoutMs=$timeoutMs, full=$full."
+    }
+
+    @Volatile internal var lastReadFailure: ReadFailure? = null
+        private set
+
     override fun recvBlocking(buf: ByteArray, length: Int, timeout: Int, readFully: Boolean): Int {
+        lastReadFailure = null
         val inp = input ?: return -1
+        var received = 0
+        fun recordFailure(cause: IOException) {
+            if (localCloseRequested) return
+            // Some streams report bytes copied by the call that threw rather than returning
+            // them. Keep that provider-supplied count as well as completed read() results.
+            val interruptedBytes = (cause as? InterruptedIOException)?.bytesTransferred ?: 0
+            val total = received + interruptedBytes.coerceIn(0, (length - received).coerceAtLeast(0))
+            lastReadFailure = ReadFailure(cause, total, length, timeout, readFully)
+        }
         return try {
-            // Dynamically apply the caller's timeout so handshake (short timeouts)
-            // and streaming (long timeouts) both work correctly on the same socket.
             try { transport.soTimeout = timeout } catch (_: Exception) {}
-            TransportModules.androidAuto.read(inp, buf, 0, length, readFully)
-        } catch (_: SocketTimeoutException) {
-            // With raw DataInputStream (no BufferedInputStream), timeout during
-            // small reads (4-byte header) virtually never causes partial consumption.
-            // Let the caller decide if this is fatal based on context.
+            // Observe each physical read without changing the module's transfer decisions or
+            // its return contract. A timeout still returns 0, never a resumable partial body.
+            val result = TransportModules.androidAuto.transfer(
+                if (readFully) TransportIo.Mode.FULL
+                else TransportIo.Mode.ONCE,
+                length,
+            ) { offset, count ->
+                inp.read(buf, offset, count).also { if (it > 0) received += it }
+            }
+            if (readFully && length > 0 && result != length) {
+                recordFailure(if (result < 0) EOFException("Socket EOF during full read")
+                    else IOException("Socket full read ended before the requested length"))
+            }
+            result
+        } catch (e: SocketTimeoutException) {
+            recordFailure(e)
             0
         } catch (e: SocketException) {
-            handleBrokenTransport(e)
+            recordFailure(e)
+            handleBrokenTransport(e, lastReadFailure)
             -1
-        } catch (_: IOException) {
+        } catch (e: IOException) {
+            recordFailure(e)
             -1
         }
     }
 
-    private fun handleBrokenTransport(e: SocketException) {
+    private fun handleBrokenTransport(e: SocketException, readFailure: ReadFailure? = null) {
         if (localCloseRequested) {
             AppLog.d("Projection socket ended after local disconnect")
         } else {
-            AppLog.e("Socket broken (server disconnected ungracefully?)", e)
+            val detail = readFailure?.let { " ${it.description()}" }.orEmpty()
+            AppLog.e("Socket broken (server disconnected ungracefully?)$detail", e)
         }
         transportBroken = true
 

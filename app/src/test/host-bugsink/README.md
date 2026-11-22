@@ -18,3 +18,8 @@ reader, header decoder, recovery policy and extracted poll callback. It injects 
 0, 300 and 4565 bytes of a 4566-byte body, plus EOF and success controls. Failure must remain
 visible, reach quit(clean=false), and queue no subsequent read or decrypt/delivery. Android,
 TLS and downstream handler objects are doubles; this does not diagnose a physical radio fault.
+
+Read-failure diagnostics checks also verify original exception identity and exact per-operation
+byte counts (including a provider's InterruptedIOException.bytesTransferred), partial EOF,
+header timeouts and I/O/reset exceptions. Clean local disconnect remains quiet. Failed reads
+still quit without queuing another poll, decrypting or delivering the partial frame.

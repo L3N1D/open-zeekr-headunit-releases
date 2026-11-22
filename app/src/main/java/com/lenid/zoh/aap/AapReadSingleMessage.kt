@@ -18,6 +18,7 @@ internal class AapReadSingleMessage(
     private val onPeerClose: () -> Unit = {})
     : AapRead.Base(connection, ssl, handler, onVideoRunHoled, faultInjector) {
 
+    private val socketConnection = connection as? SocketProjectionConnection
     private val recvHeader = AapMessageIncoming.EncryptedHeader()
     // Increase to 4MB to handle large 1080p/4K/HEVC I-frames
     private val msgBuffer = ByteArray(4 * 1024 * 1024)
@@ -43,15 +44,21 @@ internal class AapReadSingleMessage(
                     if (headerSize != AapMessageIncoming.EncryptedHeader.SIZE) return 0
                 }
                 AapReadRecoveryPolicy.Outcome.DISCONNECT_EOF -> {
-                    AppLog.i("AapRead: Connection closed (EOF). Disconnecting.")
+                    val failure = socketConnection?.lastReadFailure
+                    if (failure != null && (failure.cause !is java.io.EOFException || failure.bytesRead > 0)) {
+                        logIncompleteRead("AapRead: Header read failed. Disconnecting.")
+                    } else {
+                        val detail = failure?.let { " ${it.description()}" }.orEmpty()
+                        AppLog.i("AapRead: Connection closed (EOF). Disconnecting.$detail")
+                    }
                     return -1
                 }
                 AapReadRecoveryPolicy.Outcome.DISCONNECT_IDLE -> {
-                    AppLog.w("AapRead: WiFi read timeout (${timeout}ms) - connection lost.")
+                    logIncompleteRead("AapRead: WiFi read timeout (${timeout}ms) - connection lost.")
                     return -1
                 }
                 AapReadRecoveryPolicy.Outcome.DISCONNECT_DESYNC -> {
-                    AppLog.e(
+                    logIncompleteRead(
                         "AapRead: partial header, $headerSize of ${AapMessageIncoming.EncryptedHeader.SIZE} bytes. " +
                             "The rest of it is still on the socket and cannot be located again - disconnecting to resync."
                     )
@@ -80,11 +87,11 @@ internal class AapReadSingleMessage(
                 when (AapReadRecoveryPolicy.afterFragmentTotalRead(readSize, 4)) {
                     AapReadRecoveryPolicy.Outcome.CONTINUE -> Unit
                     AapReadRecoveryPolicy.Outcome.DISCONNECT_EOF -> {
-                        AppLog.i("AapRead: Connection closed reading the fragment total.")
+                        logIncompleteRead("AapRead: Connection closed reading the fragment total.", eof = true)
                         return -1
                     }
                     else -> {
-                        AppLog.e(
+                        logIncompleteRead(
                             "AapRead: fragment total read returned $readSize of 4 - this message's header is " +
                                 "already consumed, so the body would be read as the next header. Disconnecting to resync."
                         )
@@ -112,15 +119,15 @@ internal class AapReadSingleMessage(
             when (AapReadRecoveryPolicy.afterBodyRead(msgSize, recvHeader.enc_len)) {
                 AapReadRecoveryPolicy.Outcome.CONTINUE -> Unit
                 AapReadRecoveryPolicy.Outcome.DISCONNECT_EOF -> {
-                    AppLog.i("AapRead: Connection closed during body read.")
+                    logIncompleteRead("AapRead: Connection closed during body read.", eof = true)
                     return -1
                 }
                 else -> {
-                    // "got 0" is the timeout catch's return value, not a count: recvBlocking uses
-                    // readFully, which loops, so an unknown number of these bytes are already gone.
-                    AppLog.e(
-                        "AapRead: body read returned $msgSize of ${recvHeader.enc_len} expected - an unknown " +
-                            "number of bytes were consumed, so the stream can no longer be framed. Disconnecting to resync."
+                    // The return value is a failure sentinel, never permission to resume this
+                    // body. Socket diagnostics separately retain the bytes consumed and cause.
+                    logIncompleteRead(
+                        "AapRead: body read returned $msgSize of ${recvHeader.enc_len} expected - " +
+                            "the frame is incomplete and cannot safely be resumed. Disconnecting to resync."
                     )
                     return -1
                 }
@@ -179,6 +186,21 @@ internal class AapReadSingleMessage(
             return 0
         } finally {
             previousReadFinishedMs = SystemClock.elapsedRealtime()
+        }
+    }
+
+    /** Attach the original socket exception to the same journal event as the framing failure. */
+    private fun logIncompleteRead(message: String, eof: Boolean = false) {
+        val failure = socketConnection?.lastReadFailure
+        if (failure != null) {
+            AppLog.e(
+                "$message ${failure.description()}",
+                failure.cause,
+            )
+        } else if (eof) {
+            AppLog.i(message)
+        } else {
+            AppLog.e(message)
         }
     }
 

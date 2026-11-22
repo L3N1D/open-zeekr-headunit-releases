@@ -87,7 +87,8 @@ class ConnectivityManager {
 (OUT/'AppLog.kt').write_text('''package com.lenid.zoh.utils
 object AppLog {
  val errors=java.util.concurrent.CopyOnWriteArrayList<String>()
- fun e(s:String,t:Throwable?=null){errors.add(s)}; fun e(t:Throwable){errors.add(t.toString())}
+ val causes=java.util.concurrent.CopyOnWriteArrayList<Throwable>()
+ fun e(s:String,t:Throwable?=null){errors.add(s); if(t!=null) causes.add(t)}; fun e(t:Throwable){errors.add(t.toString())}
  fun d(s:String){}; fun i(s:String,vararg args:Any?){}; fun w(s:String,t:Throwable?=null){}
 }
 ''')
