@@ -11,3 +11,10 @@ BSSID at the existing 60-second deadline, stopped/terminal sessions, ready crede
 cancellation propagation and real handshake errors. The actual WPP state machine and
 credential validation policy are compiled. No raw events, vehicle, Bluetooth or WiFi APIs
 are required. These checks do not establish physical head-unit compatibility.
+
+The transport runs the bundled Android Auto revision 6 WebAssembly through the production
+PolicyProgram interpreter. The body-read regression compiles the production single-message
+reader, header decoder, recovery policy and extracted poll callback. It injects timeout after
+0, 300 and 4565 bytes of a 4566-byte body, plus EOF and success controls. Failure must remain
+visible, reach quit(clean=false), and queue no subsequent read or decrypt/delivery. Android,
+TLS and downstream handler objects are doubles; this does not diagnose a physical radio fault.

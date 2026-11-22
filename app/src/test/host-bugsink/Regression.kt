@@ -62,6 +62,7 @@ private fun remoteReset() {
 }
 
 fun main()=runBlocking {
+    com.lenid.zoh.aap.bodyReadRegression()
     repeat(20){AppLog.errors.clear(); localClose()}
     remoteReset()
     println("PASS: 20 loopback local-close races and genuine peer reset")
