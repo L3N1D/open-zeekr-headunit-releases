@@ -104,21 +104,26 @@ object CrashJournal {
         if (priority >= Log.ERROR) reportLogged(msg, tr)
     }
 
-    private fun reportLogged(msg: String, tr: Throwable?) {
+    internal fun reportProjectionFault(reason: String, snapshot: String) {
+        reportLogged("[projection] ProjectionWatchdog | $reason", null, snapshot)
+    }
+
+    private fun reportLogged(msg: String, tr: Throwable?, snapshot: String? = null) {
         val app = app ?: return
         val text = msg.substringAfter(" | ", msg).substringBefore('\n')
         val origin = if (msg.startsWith("[") && " | " in msg) msg.substringAfter("] ").substringBefore(" | ")
             else tr?.stackTrace?.firstOrNull { it.className.startsWith("com.lenid.zoh.") }
                 ?.let { "${it.className.substringAfterLast('.')}.${it.methodName}" } ?: "?"
         val template = template(text)
-        if (!reported.add("$origin|$template")) return
+        if (snapshot == null && !reported.add("$origin|$template")) return
         val crumbs = trail()
         worker.execute {
             try {
                 if (!countToday(app)) return@execute
                 val title = "Logged error at $origin: ${mask(text).take(200)}"
                 write(app, "error", header(app, title) + mask(msg) +
-                    (tr?.let { "\n\n" + stackText(it) } ?: "") + trailText(crumbs),
+                    (tr?.let { "\n\n" + stackText(it) } ?: "") +
+                    (snapshot?.let { "\n\n" + mask(it) } ?: "") + trailText(crumbs),
                     JSONObject().apply {
                         tr?.let { put("exception", exceptionJson(it)) }
                         put("message", title)

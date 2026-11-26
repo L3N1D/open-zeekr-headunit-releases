@@ -1,9 +1,11 @@
 package com.lenid.zoh.main
 
 import android.app.Activity
+import android.app.ActivityOptions
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.view.Display
 import com.lenid.zoh.App
 import com.lenid.zoh.aap.AapProjectionActivity
 import com.lenid.zoh.utils.AppLog
@@ -18,14 +20,27 @@ import com.lenid.zoh.utils.AppLog
  * already showing in the same window stays drawn; it is then left alone. Anything else goes on
  * to MainActivity as before.
  */
-class LauncherEntryActivity : Activity() {
+open class LauncherEntryActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val projectionHere = App.provide(this).commManager.isConnected && !App.isPiPActive &&
+        val connected = App.provide(this).commManager.isConnected && !App.isPiPActive
+        val fromDrawer = this is AppDrawerEntryActivity
+        val projectionHere = connected &&
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
             AapProjectionActivity.liveWindow.isBehind(this)
-        if (projectionHere) {
+        if (fromDrawer && connected && AapProjectionActivity.liveWindow.exists() &&
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+            display?.displayId == Display.DEFAULT_DISPLAY) {
+            val projection = AapProjectionActivity.intent(this).apply {
+                putExtra(AapProjectionActivity.EXTRA_FOCUS, true)
+                putExtra(AapProjectionActivity.EXTRA_EXPECT_DEFAULT_DISPLAY, true)
+            }
+            val options = ActivityOptions.makeBasic()
+                .setLaunchDisplayId(Display.DEFAULT_DISPLAY)
+            startActivity(projection, options.toBundle())
+        } else if (projectionHere || (fromDrawer && connected && LauncherCard.isOnCard(this) &&
+                AapProjectionActivity.liveWindow.isOnDisplay(this))) {
             AppLog.i("LauncherEntryActivity: the projection is already showing here, leaving it")
         } else {
             startActivity(Intent(intent).setClass(this, MainActivity::class.java), LauncherCard.launchOptions(this))
@@ -35,3 +50,5 @@ class LauncherEntryActivity : Activity() {
         overridePendingTransition(0, 0)
     }
 }
+
+class AppDrawerEntryActivity : LauncherEntryActivity()

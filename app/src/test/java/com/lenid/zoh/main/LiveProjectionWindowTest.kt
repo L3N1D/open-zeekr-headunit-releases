@@ -53,6 +53,8 @@ class LiveProjectionWindowTest {
         val registry = LiveProjectionWindow()
         val projection = window()
         registry.attach(projection)
+        assertTrue(registry.isOnDisplay(window(task = 43)))
+        assertFalse(registry.isOnDisplay(window(displayId = Display.DEFAULT_DISPLAY)))
         assertFalse(registry.isBehind(window(task = 43)))
         assertFalse(registry.isBehind(window(displayId = 0)))
     }

@@ -20,6 +20,15 @@ import org.junit.Test
  * and no overlay, and neither signal alone is enough for the overlay.
  */
 class ProjectionWatchdogPolicyTest {
+    @Test fun `drawer fault requires unfinished fullscreen request and a known wrong display`() {
+        assertTrue(ProjectionWatchdogPolicy.drawerDisplayMismatch(true, true, false, 4))
+        assertFalse(ProjectionWatchdogPolicy.drawerDisplayMismatch(false, true, false, 4))
+        assertFalse(ProjectionWatchdogPolicy.drawerDisplayMismatch(true, true, false, 0))
+        assertFalse(ProjectionWatchdogPolicy.drawerDisplayMismatch(true, false, false, 4))
+        assertFalse(ProjectionWatchdogPolicy.drawerDisplayMismatch(true, true, true, 4))
+        assertFalse(ProjectionWatchdogPolicy.drawerDisplayMismatch(true, true, false, null))
+    }
+
 
     @Test
     fun `the session is live through the handshake window and the whole projection`() {

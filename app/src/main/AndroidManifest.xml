@@ -212,7 +212,7 @@
                 android:resource="@xml/dongle_device_filter" />
         </activity>
 
-        <!-- The launcher icon and the Zeekr home screen card start this see-through step, which
+        <!-- The saved Zeekr navigator component starts this see-through step, which
              leaves a projection already on screen alone instead of covering it (see the class). -->
         <activity
             android:name=".main.LauncherEntryActivity"
@@ -220,6 +220,19 @@
             android:exported="true"
             android:excludeFromRecents="true"
             android:launchMode="singleTask"
+            android:noHistory="true"
+            android:resizeableActivity="true"
+            android:theme="@style/AppTheme.Translucent">
+        </activity>
+
+        <!-- The app drawer requests its own display. Keep its short-lived entry out of the
+             embedded navigator task so bringing the icon forward cannot reuse that task. -->
+        <activity
+            android:name=".main.AppDrawerEntryActivity"
+            android:allowEmbedded="true"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity="${applicationId}.drawer_entry"
             android:noHistory="true"
             android:resizeableActivity="true"
             android:theme="@style/AppTheme.Translucent">
@@ -243,7 +256,7 @@
             android:launchMode="singleTask"
             android:theme="@style/SplashTheme">
 
-            <!-- Launched by name (MAIN without LAUNCHER): the launcher icon is LauncherEntryActivity. -->
+            <!-- Launched by name (MAIN without LAUNCHER): the launcher icon is AppDrawerEntryActivity. -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.DEFAULT" />

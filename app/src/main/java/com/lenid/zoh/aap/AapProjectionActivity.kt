@@ -194,6 +194,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 watchdogHandler.postDelayed(this, ProjectionWatchdogPolicy.WATCHDOG_TICK_MS)
                 return
             }
+            reportedMissingFirstFrame = false
             val gap = SystemClock.elapsedRealtime() - lastFrame
             val linkQuiet = linkQuietMs()
             val pictureStopped = gap > ProjectionWatchdogPolicy.FRAME_GAP_MS
@@ -204,6 +205,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                     "AapProjectionActivity: picture idle for ${gap}ms and the link has been silent " +
                         "for ${describeQuiet(linkQuiet)} - treating this as a lost connection"
                 )
+                reportProjectionFault("Video and projection link stopped")
                 showReconnectingOverlay()
             } else if (overlayState == OverlayState.RECONNECTING && gap < 2000) {
                 hideReconnectingOverlay("frames resumed")
@@ -745,6 +747,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         val shouldFallBack = displayStallRecoveries >= 2 &&
             effectiveMode != Settings.ViewMode.SURFACE &&
             !videoDecoder.usingBundledSoftwareHevc
+        reportProjectionFault("Projection renderer stalled")
         ProjectionHealthRecorder.noteRendererRecovery(shouldFallBack)
         if (shouldFallBack) {
             AppLog.w("Display stall ($reason) again on $effectiveMode. Falling back to SurfaceView for this session. See issue #650.")
@@ -775,6 +778,10 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         val now = SystemClock.elapsedRealtime()
         if (now - input > rendererConfirmPhoneAliveMs) return
         if (projectionStartMs == 0L || now - projectionStartMs < rendererConfirmNoFrameMs) return
+        if (!reportedMissingFirstFrame) {
+            reportedMissingFirstFrame = true
+            reportProjectionFault("Video input active without first rendered frame")
+        }
         showRendererConfirmBanner("the phone is streaming and nothing has drawn")
     }
 
@@ -1042,6 +1049,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        verifyDrawerDisplay = savedInstanceState == null && intent.getBooleanExtra(EXTRA_EXPECT_DEFAULT_DISPLAY, false)
         liveWindow.attach(this)
         // [FIX] applyOrientationSettings() must be called AFTER super.onCreate() so that the
         // Activity window is fully initialized before we lock the orientation. Calling it before
@@ -1265,6 +1273,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     }
 
     override fun onPause() {
+        verifyDrawerDisplay = false
+        watchdogHandler.removeCallbacks(checkDrawerDisplay)
         isForeground = false
         AppLog.i("AapProjectionActivity: onPause")
         super.onPause()
@@ -1333,6 +1343,10 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         super.onResume()
         if (CardToFullScreenTransition.noteWindow(this)) CardToFullScreenTransition.play(this)
         isForeground = true
+        if (verifyDrawerDisplay) {
+            watchdogHandler.removeCallbacks(checkDrawerDisplay)
+            watchdogHandler.postDelayed(checkDrawerDisplay, 2000)
+        }
         foregroundDisplayId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) display?.displayId else null
         stayHomeAfterExit = false
         AppLog.i("AapProjectionActivity: onResume")
@@ -1378,8 +1392,32 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     }
 
 
+    private var reportedMissingFirstFrame = false
+    private var verifyDrawerDisplay = false
+    private val checkDrawerDisplay = Runnable {
+        val requested = verifyDrawerDisplay
+        verifyDrawerDisplay = false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && ProjectionWatchdogPolicy.drawerDisplayMismatch(
+                requested, commManager.isConnected, App.isPiPActive, display?.displayId)) {
+            reportProjectionFault("App drawer requested default display but projection opened on another display")
+        }
+    }
+
+    private fun reportProjectionFault(reason: String) {
+        // Failure reporting must never interrupt the projection watchdog or its recovery.
+        runCatching {
+            val view = window.decorView
+            val snapshot = "displayId=" + view.display?.displayId + "\n" +
+                com.lenid.zoh.main.DiagnosticSnapshot.snapshot(this, view.width, view.height)
+            com.lenid.zoh.utils.CrashJournal.reportProjectionFault(reason, snapshot)
+        }.onFailure { AppLog.w("Could not capture projection diagnostic", it) }
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        watchdogHandler.removeCallbacks(checkDrawerDisplay)
+        verifyDrawerDisplay = intent.getBooleanExtra(EXTRA_EXPECT_DEFAULT_DISPLAY, false)
+        if (verifyDrawerDisplay && isForeground) watchdogHandler.postDelayed(checkDrawerDisplay, 2000)
         AppLog.i("AapProjectionActivity: onNewIntent received")
     }
 
@@ -2354,6 +2392,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         internal val liveWindow = LiveProjectionWindow()
         /** Long enough for a surface callback to arrive first on a return, short enough to beat the stall window. */
         private const val RETURN_REARM_DELAY_MS = 300L
+        internal const val EXTRA_EXPECT_DEFAULT_DISPLAY = "verify_default_display"
         const val EXTRA_FOCUS = "focus"
 
         /** Set by a caller that opens this screen just before it starts a session. */

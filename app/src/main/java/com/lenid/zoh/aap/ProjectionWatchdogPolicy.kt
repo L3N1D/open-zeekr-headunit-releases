@@ -19,6 +19,9 @@ import com.lenid.zoh.decoder.video.VideoRecoveryPolicy
  * mid-session stayed black with nothing ever asking for it back.
  */
 object ProjectionWatchdogPolicy {
+    internal fun drawerDisplayMismatch(requested: Boolean, connected: Boolean, pip: Boolean, displayId: Int?) =
+        requested && connected && !pip && displayId != null && displayId != android.view.Display.DEFAULT_DISPLAY
+
 
     /**
      * True while the projection session is live: [CommManager.ConnectionState.HandshakeComplete]
