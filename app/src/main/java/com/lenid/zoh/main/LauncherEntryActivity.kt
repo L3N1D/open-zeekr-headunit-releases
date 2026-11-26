@@ -26,10 +26,18 @@ open class LauncherEntryActivity : Activity() {
         super.onCreate(savedInstanceState)
         val connected = App.provide(this).commManager.isConnected && !App.isPiPActive
         val fromDrawer = this is AppDrawerEntryActivity
+        val onCard = LauncherCard.isOnCard(this)
+        val drawerIcon = fromDrawer && LauncherEntryRequest.isDrawerIcon(intent)
+        val cardRequest = LauncherEntryRequest.isMapCard(intent)
         val projectionHere = connected &&
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
             AapProjectionActivity.liveWindow.isBehind(this)
-        if (fromDrawer && connected && AapProjectionActivity.liveWindow.exists() &&
+        // startAutoMap selects our LAUNCHER component too, but its intent carries map bounds.
+        // A card launch delivered to the main display must not fall through to MainActivity,
+        // which also raises Android Auto while connected.
+        if (cardRequest && !onCard && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            AppLog.i("LauncherEntryActivity: ignoring navigator-card request outside its display")
+        } else if (drawerIcon && connected && AapProjectionActivity.liveWindow.exists() &&
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
             display?.displayId == Display.DEFAULT_DISPLAY) {
             val projection = AapProjectionActivity.intent(this).apply {
@@ -39,10 +47,13 @@ open class LauncherEntryActivity : Activity() {
             val options = ActivityOptions.makeBasic()
                 .setLaunchDisplayId(Display.DEFAULT_DISPLAY)
             startActivity(projection, options.toBundle())
-        } else if (projectionHere || (fromDrawer && connected && LauncherCard.isOnCard(this) &&
+        } else if (projectionHere || (fromDrawer && connected && onCard &&
                 AapProjectionActivity.liveWindow.isOnDisplay(this))) {
             AppLog.i("LauncherEntryActivity: the projection is already showing here, leaving it")
+        } else if (cardRequest && onCard && connected && AapProjectionActivity.liveWindow.exists()) {
+            startActivity(AapProjectionActivity.intent(this), LauncherCard.launchOptions(this))
         } else {
+            if (cardRequest && onCard) AapProjectionActivity.noteLaunchDisplay(this)
             startActivity(Intent(intent).setClass(this, MainActivity::class.java), LauncherCard.launchOptions(this))
         }
         finish()
@@ -52,3 +63,12 @@ open class LauncherEntryActivity : Activity() {
 }
 
 class AppDrawerEntryActivity : LauncherEntryActivity()
+
+internal object LauncherEntryRequest {
+    fun isMapCard(intent: Intent): Boolean =
+        intent.hasExtra("launcher_view_port_delta_x") || intent.hasExtra("map_view_left_margin") ||
+            intent.hasExtra("launcher_resume_to_map")
+
+    fun isDrawerIcon(intent: Intent): Boolean =
+        intent.action == Intent.ACTION_MAIN && intent.hasCategory(Intent.CATEGORY_LAUNCHER) && !isMapCard(intent)
+}
