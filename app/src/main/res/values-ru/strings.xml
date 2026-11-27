@@ -72,8 +72,8 @@
     <string name="enable_gles">Включить GLES</string>
     <string name="stop_navi_in_background">Останавливать Яндекс Навигатор в фоне</string>
     <string name="stop_navi_in_background_description">Пока работает Android Auto, встроенный Яндекс Навигатор останавливается через минуту после ухода с экрана, чтобы не тормозить магнитолу</string>
-    <string name="launcher_card">Android Auto в карточке на главном экране</string>
-    <string name="launcher_card_description">Показывать Android Auto в карточке навигатора на главном экране машины вместо встроенного навигатора. Если выключить, карточка вернётся прежнему навигатору</string>
+    <string name="launcher_card">Open Headunit вместо навигатора</string>
+    <string name="launcher_card_description">Показывать Open Headunit в карточке карты. При подключении телефона в ней появляется Android Auto. Выключите, чтобы вернуть прежний навигатор. Выбор сохраняется после перезагрузки.</string>
     <string name="category_navigation">Навигация</string>
     <string name="category_wireless">Беспроводное соединение</string>
 
@@ -1481,7 +1481,7 @@ Open Headunit предоставляется «как есть» без каки
     <!-- Быстрые действия на главном экране -->
     <string name="home_hud_map">Карта на HUD</string>
     <string name="home_card">Карточка</string>
-    <string name="launcher_card_toast_on">Карточка на главном экране: Android Auto</string>
+    <string name="launcher_card_toast_on">Карточка карты: Open Headunit</string>
     <string name="launcher_card_toast_off">Карточка на главном экране: навигатор</string>
     <string name="launcher_card_myregion_title">MyRegion может вернуть карточку</string>
     <string name="launcher_card_myregion_message">На магнитоле установлен MyRegion — его настройка «Приложение навигации» перезаписывает карточку на главном экране. Откройте MyRegion → Настройки мультимедиа → Приложение навигации и выберите «Ничего», иначе карточка переключится с Android Auto.</string>

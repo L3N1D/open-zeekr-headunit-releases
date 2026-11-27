@@ -27,6 +27,13 @@ class BootCompleteReceiver : BroadcastReceiver() {
             return
         }
 
+        // Application.onCreate may have run before credential-protected preferences were available.
+        try {
+            com.lenid.zoh.main.LauncherCard.reassert(context)
+        } catch (e: Exception) {
+            AppLog.w("BootCompleteReceiver: could not restore navigator card: ${e.message}")
+        }
+
         val settings = Settings(context)
         val bootEnabled = Settings.isAutoStartOnBootEnabled(context)
         val screenOnEnabled = Settings.isAutoStartOnScreenOnEnabled(context)

@@ -31,7 +31,13 @@ internal class AapMessageHandlerType(
     private val aapNavigation = AapNavigation(context, settings, presentation)
 
     private var lastPhoneState: String? = null
-    private val incomingCall = ZeekrIncomingCall(context)
+    private val incomingCall = ZeekrIncomingCall(context) { answer ->
+        if (presentationSession.isActive && transport.isAlive) {
+            val key = if (answer) android.view.KeyEvent.KEYCODE_CALL else android.view.KeyEvent.KEYCODE_ENDCALL
+            transport.send(key, true)
+            transport.send(key, false)
+        }
+    }
 
     override fun close() {
         presentationSession.retire()

@@ -336,8 +336,8 @@
     <string name="enable_gles">Enable GLES</string>
     <string name="stop_navi_in_background">Stop Yandex Navigator in the background</string>
     <string name="stop_navi_in_background_description">While Android Auto runs, the built-in Yandex Navigator is stopped after a minute off screen, so it does not slow the head unit down</string>
-    <string name="launcher_card">Android Auto in the home screen card</string>
-    <string name="launcher_card_description">Show Android Auto in the navigator card on the car\'s home screen instead of the built-in navigator. Turning it off gives the card back</string>
+    <string name="launcher_card">Open Headunit in the navigator card</string>
+    <string name="launcher_card_description">Show Open Headunit in the map card. When the phone connects, the card shows Android Auto. Turn off to restore the previous navigator. This choice is kept after restart.</string>
     <string name="category_navigation">Navigation</string>
     <string name="category_wireless">Wireless Connection</string>
 
@@ -1659,7 +1659,7 @@
     <!-- Home quick actions -->
     <string name="home_hud_map">HUD map</string>
     <string name="home_card">Card</string>
-    <string name="launcher_card_toast_on">Home screen card: Android Auto</string>
+    <string name="launcher_card_toast_on">Map card: Open Headunit</string>
     <string name="launcher_card_toast_off">Home screen card: navigator</string>
     <string name="launcher_card_myregion_title">MyRegion can take the card back</string>
     <string name="launcher_card_myregion_message">MyRegion is installed on this head unit, and its own "navigation app" setting rewrites the home screen card. Open MyRegion → Multimedia settings → Navigation app and choose "Nothing", otherwise the card will switch away from Android Auto.</string>

@@ -818,7 +818,7 @@ class HomeFragment : Fragment() {
     private fun onCardToggleClicked() {
         val ctx = context ?: return
         if (!LauncherCard.canWrite(ctx)) return
-        val target = !LauncherCard.isEnabled(ctx)
+        val target = !LauncherCard.isAssigned(ctx)
         // MyRegion rewrites the card's keys from its own setting; enabling under it silently
         // loses the card on its next write, so say where its "Nothing" choice lives first.
         if (target && LauncherCard.hasConflictingNavigatorApp(ctx)) {
@@ -835,6 +835,7 @@ class HomeFragment : Fragment() {
 
     private fun applyCardToggle(ctx: android.content.Context, target: Boolean) {
         if (LauncherCard.setEnabled(ctx, target)) {
+            LauncherCard.showSelection(ctx, target)
             ToastUtils.showToast(ctx,
                 getString(if (target) R.string.launcher_card_toast_on else R.string.launcher_card_toast_off),
                 Toast.LENGTH_SHORT)
@@ -851,7 +852,7 @@ class HomeFragment : Fragment() {
             return
         }
         tile.visibility = View.VISIBLE
-        tile.alpha = if (LauncherCard.isEnabled(ctx)) 1f else 0.45f
+        tile.alpha = if (LauncherCard.isAssigned(ctx)) 1f else 0.45f
     }
 
     /**

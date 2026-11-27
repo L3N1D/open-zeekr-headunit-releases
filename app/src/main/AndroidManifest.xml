@@ -229,6 +229,7 @@
              embedded navigator task so bringing the icon forward cannot reuse that task. -->
         <activity
             android:name=".main.AppDrawerEntryActivity"
+            android:launchMode="singleTask"
             android:allowEmbedded="true"
             android:exported="true"
             android:excludeFromRecents="true"

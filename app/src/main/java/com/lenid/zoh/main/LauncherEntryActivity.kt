@@ -22,6 +22,10 @@ import com.lenid.zoh.utils.AppLog
  */
 open class LauncherEntryActivity : Activity() {
 
+    private companion object {
+        val navigatorDisplay = NavigatorCardDisplay()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val connected = App.provide(this).commManager.isConnected && !App.isPiPActive
@@ -29,6 +33,9 @@ open class LauncherEntryActivity : Activity() {
         val onCard = LauncherCard.isOnCard(this)
         val drawerIcon = fromDrawer && LauncherEntryRequest.isDrawerIcon(intent)
         val cardRequest = LauncherEntryRequest.isMapCard(intent)
+        if (cardRequest && onCard && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            navigatorDisplay.remember(display)
+        }
         val projectionHere = connected &&
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
             AapProjectionActivity.liveWindow.isBehind(this)
@@ -36,7 +43,24 @@ open class LauncherEntryActivity : Activity() {
         // A card launch delivered to the main display must not fall through to MainActivity,
         // which also raises Android Auto while connected.
         if (cardRequest && !onCard && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            AppLog.i("LauncherEntryActivity: ignoring navigator-card request outside its display")
+            val target = navigatorDisplay.currentId()
+            if (target != null) {
+                val content = if (connected && AapProjectionActivity.liveWindow.exists()) {
+                    Intent(this, AapProjectionActivity::class.java)
+                } else {
+                    Intent(intent).setClass(this, MainActivity::class.java)
+                }
+                val options = ActivityOptions.makeBasic().setLaunchDisplayId(target)
+                try {
+                    startActivity(content, options.toBundle())
+                } catch (e: SecurityException) {
+                    AppLog.w("LauncherEntryActivity: launcher card is no longer accessible: ${e.message}")
+                } catch (e: IllegalArgumentException) {
+                    AppLog.w("LauncherEntryActivity: launcher card disappeared: ${e.message}")
+                }
+            } else {
+                AppLog.i("LauncherEntryActivity: awaiting navigator-card display from launcher")
+            }
         } else if (drawerIcon && connected && AapProjectionActivity.liveWindow.exists() &&
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
             display?.displayId == Display.DEFAULT_DISPLAY) {
@@ -71,4 +95,15 @@ internal object LauncherEntryRequest {
 
     fun isDrawerIcon(intent: Intent): Boolean =
         intent.action == Intent.ACTION_MAIN && intent.hasCategory(Intent.CATEGORY_LAUNCHER) && !isMapCard(intent)
+}
+
+/** Only the Zeekr launcher's marked navigator request identifies the card among secondary displays. */
+internal class NavigatorCardDisplay {
+    private var card: Display? = null
+
+    fun remember(display: Display?) {
+        if (display != null && display.displayId > Display.DEFAULT_DISPLAY && display.isValid) card = display
+    }
+
+    fun currentId(): Int? = card?.takeIf { it.isValid }?.displayId
 }
